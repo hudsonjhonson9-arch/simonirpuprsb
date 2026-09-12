@@ -10,13 +10,15 @@ const gasApi = {
   _failureHandler: null,
 
   withSuccessHandler(fn) {
-    this._successHandler = fn;
-    return this;
+    const c = Object.create(this);
+    c._successHandler = fn;
+    return c;
   },
 
   withFailureHandler(fn) {
-    this._failureHandler = fn;
-    return this;
+    const c = Object.create(this);
+    c._failureHandler = fn;
+    return c;
   },
 
   async _call(action, params) {
