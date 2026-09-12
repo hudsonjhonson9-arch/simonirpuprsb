@@ -3,7 +3,7 @@
  * Deploy GAS as web app, set GAS_URL below.
  */
 
-const GAS_URL = 'YOUR_GAS_WEB_APP_URL'; // <-- ganti setelah deploy GAS
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwAXpHRV65LFiNweiSCbk3DehrNgpC1x8KRkHPOMzOZNR-OXGnLhO1DN3DA_jPWIf_-mQ/exec';
 
 const gasApi = {
   _successHandler: null,
