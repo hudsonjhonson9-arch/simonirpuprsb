@@ -23,7 +23,7 @@ const gasApi = {
     try {
       const res = await fetch(GAS_URL, {
         method: 'POST',
-        contentType: 'application/json',
+        headers: { 'Content-Type': 'text/plain' },
         body: JSON.stringify({ action, params }),
       });
       const data = await res.json();
