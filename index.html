@@ -1,0 +1,2453 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+      content="width=device-width, initial-scale=1.0">
+
+<title>SI MONIR - Monitoring Irigasi</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="gas-api.js"></script>
+
+<style>
+
+*{
+  box-sizing:border-box;
+  margin:0;
+  padding:0;
+}
+
+body{
+  font-family:Inter,Segoe UI,Arial,sans-serif;
+  background:#f5f8fc;
+  color:#13213a;
+}
+
+button{
+  font:inherit;
+  border:0;
+  cursor:pointer;
+}
+
+.app{
+  display:flex;
+  min-height:100vh;
+}
+
+.sidebar{
+  width:255px;
+  background:linear-gradient(180deg,#073a75,#062b58);
+  color:white;
+  position:fixed;
+  left:0;
+  top:0;
+  bottom:0;
+  padding:22px 13px;
+  z-index:20;
+}
+
+.brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:3px 10px 25px;
+  border-bottom:1px solid rgba(255,255,255,.13);
+}
+
+.logo{
+  width:45px;
+  height:45px;
+  border-radius:13px;
+  background:linear-gradient(135deg,#16a6ff,#0c63d9);
+  display:grid;
+  place-items:center;
+  font-size:24px;
+}
+
+.brand h1{
+  font-size:25px;
+}
+
+.brand p{
+  font-size:13px;
+  opacity:.8;
+}
+
+.nav{
+  margin-top:20px;
+}
+
+.nav a{
+  display:flex;
+  align-items:center;
+  gap:13px;
+  padding:12px 13px;
+  margin:5px 0;
+  color:#e8f1ff;
+  text-decoration:none;
+  border-radius:10px;
+  font-size:14px;
+}
+
+.nav a:hover,
+.nav a.active{
+  background:linear-gradient(90deg,#1976f3,#2387ff);
+}
+
+.nav .ico{
+  width:23px;
+  text-align:center;
+  font-size:18px;
+}
+
+.profile{
+  position:absolute;
+  left:15px;
+  right:15px;
+  bottom:72px;
+  border-top:1px solid rgba(255,255,255,.13);
+  padding-top:18px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.avatar{
+  width:45px;
+  height:45px;
+  border-radius:50%;
+  background:white;
+  color:#1471e8;
+  display:grid;
+  place-items:center;
+  font-weight:800;
+}
+
+.profile b{
+  font-size:13px;
+}
+
+.profile small{
+  display:block;
+  opacity:.78;
+  font-size:11px;
+  margin-top:4px;
+}
+
+.online{
+  color:#49e58a;
+}
+
+.agency{
+  position:absolute;
+  left:15px;
+  right:15px;
+  bottom:17px;
+  border-top:1px solid rgba(255,255,255,.13);
+  padding-top:13px;
+  font-size:12px;
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.agency .mark{
+  width:38px;
+  height:38px;
+  background:#f5cf00;
+  color:#1550a0;
+  display:grid;
+  place-items:center;
+  font-weight:900;
+}
+
+.main{
+  margin-left:255px;
+  width:calc(100% - 255px);
+}
+
+.topbar{
+  height:65px;
+  background:white;
+  border-bottom:1px solid #e8edf4;
+  display:flex;
+  align-items:center;
+  padding:0 38px;
+}
+
+.menu{
+  font-size:25px;
+  color:#173557;
+  background:none;
+}
+
+.content{
+  padding:26px 37px 20px;
+}
+
+.welcome{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:22px;
+}
+
+.welcome h2{
+  font-size:23px;
+}
+
+.welcome p{
+  font-size:14px;
+  color:#66758b;
+  margin-top:5px;
+}
+
+.actions{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+
+.date{
+  padding:10px 15px;
+  background:white;
+  border:1px solid #e4e9f1;
+  border-radius:12px;
+  font-size:13px;
+}
+
+.kpis{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:20px;
+  margin-bottom:21px;
+}
+
+.card{
+  background:white;
+  border:1px solid #e7ecf3;
+  border-radius:14px;
+  box-shadow:0 4px 16px rgba(30,60,100,.06);
+}
+
+.kpi{
+  padding:18px;
+  display:flex;
+  align-items:center;
+  gap:15px;
+}
+
+.kicon{
+  width:58px;
+  height:58px;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  color:white;
+  font-size:25px;
+}
+
+.blue{
+  background:#1577ef;
+}
+
+.green{
+  background:#16b56a;
+}
+
+.purple{
+  background:#702de8;
+}
+
+.orange{
+  background:#ff900d;
+}
+
+.kpi label{
+  font-size:13px;
+  color:#63728a;
+}
+
+.kpi strong{
+  display:block;
+  font-size:27px;
+  margin:4px 0;
+}
+
+.kpi small{
+  color:#7c899b;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:1.05fr .95fr;
+  gap:20px;
+}
+
+.panel{
+  padding:18px 19px;
+  min-height:350px;
+}
+
+.panel-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:13px;
+}
+
+.panel-head h3{
+  font-size:15px;
+}
+
+.linkbtn{
+  color:#0877f9;
+  background:#f4f8ff;
+  border:1px solid #dbe9ff;
+  border-radius:9px;
+  padding:7px 11px;
+  font-size:12px;
+}
+
+.progress-box{
+  display:grid;
+  grid-template-columns:180px 1fr;
+  align-items:center;
+  gap:15px;
+}
+
+.donut-wrap{
+  height:170px;
+  position:relative;
+}
+
+.donut-wrap canvas{
+  width:170px!important;
+  height:170px!important;
+}
+
+.donut-center{
+  position:absolute;
+  left:0;
+  right:0;
+  top:65px;
+  text-align:center;
+  font-size:24px;
+  font-weight:800;
+}
+
+.donut-center small{
+  display:block;
+  font-size:11px;
+  color:#7b8799;
+  font-weight:500;
+}
+
+.legend div{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin:12px 0;
+  font-size:13px;
+}
+
+.dot{
+  width:11px;
+  height:11px;
+  border-radius:50%;
+  display:inline-block;
+}
+
+.legend span{
+  margin-left:auto;
+  font-weight:600;
+}
+
+.line-title{
+  font-weight:700;
+  font-size:14px;
+  margin:10px 0;
+}
+
+.line-chart{
+  height:120px;
+}
+
+.map{
+  height:270px;
+  border-radius:11px;
+  position:relative;
+  overflow:hidden;
+  border:1px solid #e7ecf3;
+}
+
+.map-legend{
+  position:absolute;
+  bottom:8px;
+  left:12px;
+  right:12px;
+  background:white;
+  border-radius:8px;
+  padding:9px;
+  display:flex;
+  justify-content:space-around;
+  font-size:11px;
+}
+
+.bottom{
+  margin-top:20px;
+  display:grid;
+  grid-template-columns:1.05fr .95fr;
+  gap:20px;
+}
+
+.quick{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  padding:18px;
+}
+
+.quick button{
+  background:white;
+  text-align:center;
+}
+
+.qicon{
+  width:50px;
+  height:50px;
+  border-radius:11px;
+  margin:0 auto 9px;
+  display:grid;
+  place-items:center;
+  color:white;
+  font-size:23px;
+}
+
+.quick small{
+  font-size:12px;
+  color:#34445c;
+}
+
+.activity{
+  padding:18px;
+}
+
+.activity-item{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 0;
+  border-bottom:1px solid #eef1f5;
+  font-size:12px;
+}
+
+.aicon{
+  width:30px;
+  height:30px;
+  border-radius:8px;
+  background:#eef8f2;
+  color:#11a35f;
+  display:grid;
+  place-items:center;
+}
+
+.activity b{
+  display:block;
+  font-size:12px;
+}
+
+.activity small{
+  color:#8290a2;
+}
+
+.status{
+  margin-left:auto;
+  border-radius:12px;
+  padding:5px 9px;
+  background:#eaf8ef;
+  color:#16a15e;
+  font-size:10px;
+}
+
+.status.warn{
+  background:#fff0f0;
+  color:#e33b43;
+}
+
+.status.info{
+  background:#edf5ff;
+  color:#1675df;
+}
+
+footer{
+  text-align:center;
+  color:#728096;
+  font-size:11px;
+  padding:22px;
+}
+
+@media(max-width:1050px){
+
+  .sidebar{
+    width:210px;
+  }
+
+  .main{
+    margin-left:210px;
+    width:calc(100% - 210px);
+  }
+
+  .kpis{
+    grid-template-columns:repeat(2,1fr);
+  }
+
+  .grid,
+  .bottom{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:720px){
+
+  .sidebar{
+    transform:translateX(-100%);
+    transition:.25s;
+  }
+
+  .sidebar.open{
+    transform:translateX(0);
+  }
+
+  .main{
+    margin-left:0;
+    width:100%;
+  }
+
+  .content{
+    padding:20px;
+  }
+
+  .kpis{
+    grid-template-columns:1fr;
+  }
+
+  .welcome{
+    align-items:flex-start;
+    gap:15px;
+  }
+
+  .progress-box{
+    grid-template-columns:1fr;
+  }
+
+  .bottom{
+    grid-template-columns:1fr;
+  }
+
+  .quick{
+    grid-template-columns:repeat(2,1fr);
+  }
+}
+
+.login-overlay{
+  position:fixed;
+  inset:0;
+  background:linear-gradient(135deg,#073a75,#0a4f9e);
+  display:grid;
+  place-items:center;
+  z-index:999;
+}
+
+.login-box{
+  background:white;
+  border-radius:16px;
+  padding:40px;
+  width:380px;
+  max-width:90vw;
+  box-shadow:0 20px 60px rgba(0,0,0,.3);
+}
+
+.login-box h2{
+  text-align:center;
+  margin-bottom:6px;
+  font-size:22px;
+  color:#073a75;
+}
+
+.login-box .sub{
+  text-align:center;
+  font-size:13px;
+  color:#66758b;
+  margin-bottom:28px;
+}
+
+.login-box .field{
+  margin-bottom:16px;
+}
+
+.login-box label{
+  display:block;
+  font-size:13px;
+  color:#445566;
+  margin-bottom:5px;
+  font-weight:600;
+}
+
+.login-box input{
+  width:100%;
+  padding:11px 14px;
+  border:1px solid #dde3eb;
+  border-radius:10px;
+  font-size:14px;
+  outline:none;
+  transition:.2s;
+}
+
+.login-box input:focus{
+  border-color:#1678ef;
+  box-shadow:0 0 0 3px rgba(22,120,239,.15);
+}
+
+.login-box .btn{
+  width:100%;
+  padding:12px;
+  background:linear-gradient(90deg,#1678ef,#0c63d9);
+  color:white;
+  border:none;
+  border-radius:10px;
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+  margin-top:6px;
+  transition:.2s;
+}
+
+.login-box .btn:hover{
+  opacity:.9;
+  transform:translateY(-1px);
+}
+
+.login-box .btn:disabled{
+  opacity:.5;
+  cursor:not-allowed;
+  transform:none;
+}
+
+.login-err{
+  background:#fff0f0;
+  color:#e33b43;
+  padding:10px;
+  border-radius:8px;
+  font-size:13px;
+  margin-bottom:14px;
+  display:none;
+  text-align:center;
+}
+
+.login-logo{
+  width:64px;
+  height:64px;
+  border-radius:16px;
+  background:linear-gradient(135deg,#16a6ff,#0c63d9);
+  display:grid;
+  place-items:center;
+  font-size:32px;
+  margin:0 auto 16px;
+}
+
+.badge-role{
+  display:inline-block;
+  padding:2px 8px;
+  border-radius:6px;
+  font-size:10px;
+  font-weight:700;
+  text-transform:uppercase;
+}
+
+.badge-admin{ background:#fef3c7; color:#92400e; }
+.badge-operator{ background:#dbeafe; color:#1e40af; }
+.badge-kabid{ background:#d1fae5; color:#065f46; }
+
+.btn-logout{
+  background:none;
+  border:1px solid rgba(255,255,255,.2);
+  color:white;
+  padding:6px 12px;
+  border-radius:8px;
+  font-size:12px;
+  cursor:pointer;
+  margin-top:10px;
+  width:100%;
+}
+
+.btn-logout:hover{
+  background:rgba(255,255,255,.1);
+}
+
+</style>
+
+</head>
+
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="loginOverlay" style="display:none">
+
+  <div class="login-box">
+
+    <div class="login-logo">🌱</div>
+
+    <h2>SI MONIR</h2>
+    <p class="sub">Sistem Informasi Monitoring Irigasi</p>
+
+    <div class="login-err" id="loginErr"></div>
+
+    <div class="field">
+      <label>Email</label>
+      <input type="email"
+             id="loginEmail"
+             placeholder="email@sumbar.go.id"
+             onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+
+    <div class="field">
+      <label>Password</label>
+      <input type="password"
+             id="loginPass"
+             placeholder="Masukkan password"
+             onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+
+    <button class="btn" id="loginBtn" onclick="doLogin()">
+      Masuk
+    </button>
+
+  </div>
+
+</div>
+
+<div class="app" id="appMain" style="display:none">
+
+<!-- SIDEBAR -->
+
+<aside class="sidebar" id="sidebar">
+
+  <div class="brand">
+
+    <div class="logo">🌱</div>
+
+    <div>
+      <h1>SI MONIR</h1>
+      <p>Monitoring Irigasi</p>
+    </div>
+
+  </div>
+
+  <nav class="nav">
+
+    <a class="active" href="#" onclick=" setActive(this); dashboard(); ">
+      <span class="ico">⌂</span>
+      Dashboard
+    </a>
+
+    <a href="#" onclick="menu('proyek')">
+      <span class="ico">♧</span>
+      Proyek Irigasi
+    </a>
+
+    <a href="#" onclick="menu('laporan')">
+      <span class="ico">▤</span>
+      Laporan Harian
+    </a>
+
+    <a href="#" onclick="menu('dokumentasi')" data-role="operator">
+      <span class="ico">▣</span>
+      Dokumentasi
+    </a>
+
+    <a href="#" onclick="menu('progress')" data-role="operator">
+      <span class="ico">⌁</span>
+      Progress Fisik
+    </a>
+
+    <a href="#" onclick="menu('rab')">
+      <span class="ico">▥</span>
+      RAB & Anggaran
+    </a>
+
+    <a href="#" onclick="menu('kerusakan')">
+      <span class="ico">⚒️</span>
+      Kerusakan Jaringan
+    </a>
+
+    <a href="#" onclick=" setActive(this); peta(); ">
+      <span class="ico">⌖</span>
+      Peta Lokasi
+    </a>
+
+    <a href="#" onclick="setActive(this);renderUserManagement()" data-role="admin">
+      <span class="ico">▦</span>
+      Data Master
+    </a>
+
+    <a href="#" onclick="laporan()" data-role="kabid">
+      <span class="ico">▧</span>
+      Laporan
+    </a>
+
+    <a href="#" onclick="alert('Pengaturan')" data-role="admin">
+      <span class="ico">⚙️</span>
+      Pengaturan
+    </a>
+
+  </nav>
+
+  <div class="profile" id="sidebarProfile">
+
+    <div class="avatar" id="userAvatar">--</div>
+
+    <div>
+      <b id="userName">Memuat...</b>
+      <small id="userRole">-</small>
+      <small class="online">● Online</small>
+    </div>
+
+  </div>
+
+  <div class="agency">
+
+    <div class="mark">PUPR</div>
+
+    <div>
+      <b>Dinas PUPR</b><br>
+      Kabupaten Sumba Barat
+    </div>
+
+  </div>
+
+  <button class="btn-logout" onclick="doLogout()">
+    Keluar
+  </button>
+
+</aside>
+
+
+<!-- MAIN -->
+
+<main class="main">
+
+<header class="topbar">
+
+  <button class="menu"
+          onclick="toggleMenu()">
+    ☰
+  </button>
+
+</header>
+
+
+<section class="content">
+
+<div class="welcome">
+
+  <div>
+
+    <h2>
+      Selamat Datang, Loudry Urizon Haenael 👋
+    </h2>
+
+    <p>
+      Pengelola Sumber Daya Air Ahli Pertama
+    </p>
+
+  </div>
+
+  <div class="actions">
+
+    <div class="date" id="tanggal">
+      Memuat tanggal...
+    </div>
+
+    <div>
+      🔔
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- KPI -->
+
+<div class="kpis">
+
+  <div class="card kpi">
+
+    <div class="kicon blue">
+      ▣
+    </div>
+
+    <div>
+
+      <label>Total Proyek</label>
+
+      <strong id="totalProyek">
+        0
+      </strong>
+
+      <small>
+        Proyek Terdaftar
+      </small>
+
+    </div>
+
+  </div>
+
+
+  <div class="card kpi">
+
+    <div class="kicon green">
+      ⌁
+    </div>
+
+    <div>
+
+      <label>Progres Rata-rata</label>
+
+      <strong id="rataProgress">
+        0%
+      </strong>
+
+      <small>
+        Semua Proyek
+      </small>
+
+    </div>
+
+  </div>
+
+
+  <div class="card kpi">
+
+    <div class="kicon purple">
+      ▤
+    </div>
+
+    <div>
+
+      <label>Laporan Hari Ini</label>
+
+      <strong id="laporanHariIni">
+        0
+      </strong>
+
+      <small>
+        Laporan Masuk
+      </small>
+
+    </div>
+
+  </div>
+
+
+  <div class="card kpi">
+
+    <div class="kicon orange">
+      !
+    </div>
+
+    <div>
+
+      <label>Kerusakan Dilaporkan</label>
+
+      <strong id="jumlahKerusakan">
+        0
+      </strong>
+
+      <small>
+        Butuh Tindak Lanjut
+      </small>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- GRAFIK -->
+
+<div class="grid">
+
+<section class="card panel">
+
+<div class="panel-head">
+
+<h3>
+PROGRES PROYEK IRIGASI
+</h3>
+
+<button class="linkbtn"
+        onclick="menu('proyek')">
+Lihat Semua
+</button>
+
+</div>
+
+
+<div class="progress-box">
+
+<div class="donut-wrap">
+
+<canvas id="donut"></canvas>
+
+<div class="donut-center">
+
+<span id="donutValue">
+0%
+</span>
+
+<small>
+Rata-rata Progres
+</small>
+
+</div>
+
+</div>
+
+
+<div class="legend">
+
+<div>
+<i class="dot" style="background:#16b56a"></i>
+Selesai
+<span id="selesai">0 Proyek</span>
+</div>
+
+<div>
+<i class="dot" style="background:#1678ef"></i>
+On Progress
+<span id="onProgress">0 Proyek</span>
+</div>
+
+<div>
+<i class="dot" style="background:#707986"></i>
+Belum Mulai
+<span id="belumMulai">0 Proyek</span>
+</div>
+
+<div>
+<i class="dot" style="background:#ef303b"></i>
+Terlambat
+<span id="terlambat">0 Proyek</span>
+</div>
+
+</div>
+
+</div>
+
+
+<div class="line-title">
+Grafik Progres Bulanan
+</div>
+
+<div class="line-chart">
+
+<canvas id="line"></canvas>
+
+</div>
+
+</section>
+
+
+<section class="card panel">
+
+<div class="panel-head">
+
+<h3>
+PETA SEBARAN PROYEK
+</h3>
+
+<button class="linkbtn"
+        onclick="peta()">
+Lihat Peta
+</button>
+
+</div>
+
+<div class="map" id="map"></div>
+
+</section>
+
+</div>
+
+
+<!-- BOTTOM -->
+
+<div class="bottom">
+
+
+<section class="card">
+
+<div class="panel-head"
+     style="padding:18px 18px 0">
+
+<h3>
+AKSI CEPAT
+</h3>
+
+</div>
+
+
+<div class="quick">
+
+<button onclick="buatLaporan()">
+
+<div class="qicon blue">
+▤+
+</div>
+
+<small>
+Buat Laporan<br>
+Harian
+</small>
+
+</button>
+
+
+<button onclick="dokumentasi()">
+
+<div class="qicon green">
+▣
+</div>
+
+<small>
+Tambah<br>
+Dokumentasi
+</small>
+
+</button>
+
+
+<button onclick="updateProgress()">
+
+<div class="qicon orange">
+⌁
+</div>
+
+<small>
+Update<br>
+Progres
+</small>
+
+</button>
+
+
+<button onclick="laporKerusakan()">
+
+<div class="qicon purple">
+!
+</div>
+
+<small>
+Laporkan<br>
+Kerusakan
+</small>
+
+</button>
+
+</div>
+
+</section>
+
+
+<section class="card activity">
+
+<div class="panel-head">
+
+<h3>
+AKTIVITAS TERBARU
+</h3>
+
+</div>
+
+<div id="aktivitas">
+
+Memuat aktivitas...
+
+</div>
+
+</section>
+
+</div>
+
+</section>
+
+
+<footer>
+
+© 2026 SI MONIR - Sistem Informasi Monitoring Irigasi |
+Dinas PUPR Kabupaten Sumba Barat |
+Versi 1.0.0
+
+</footer>
+
+</main>
+
+</div>
+
+
+<script>
+
+/* =========================
+   MENU
+========================= */
+
+function toggleMenu(){
+
+  document
+    .getElementById('sidebar')
+    .classList
+    .toggle('open');
+
+}
+
+
+function setActive(el){
+
+  document.querySelectorAll('.nav a')
+    .forEach(function(a){
+      a.classList.remove('active');
+    });
+
+  if(el) el.classList.add('active');
+
+}
+
+
+/* =========================
+   LOAD DASHBOARD
+========================= */
+
+let donutChart;
+let lineChart;
+
+
+function loadDashboard(){
+
+  gasApi
+    .withSuccessHandler(renderDashboard)
+    .withFailureHandler(errorHandler)
+    .getDashboardData();
+
+  gasApi
+    .withSuccessHandler(renderAktivitas)
+    .getAktivitas();
+
+  gasApi
+    .withSuccessHandler(renderProgressBulanan)
+    .getProgressBulanan();
+
+  gasApi
+    .withSuccessHandler(renderPeta)
+    .getPetaProyek();
+
+}
+
+
+/* =========================
+   RENDER DASHBOARD
+========================= */
+
+function renderDashboard(data){
+
+  document.getElementById('totalProyek')
+    .textContent = data.totalProyek;
+
+  document.getElementById('rataProgress')
+    .textContent = data.rataProgress + '%';
+
+  document.getElementById('donutValue')
+    .textContent = data.rataProgress + '%';
+
+  document.getElementById('laporanHariIni')
+    .textContent = data.laporanHariIni;
+
+  document.getElementById('jumlahKerusakan')
+    .textContent = data.kerusakan;
+
+  document.getElementById('selesai')
+    .textContent =
+    data.statusProyek.selesai + ' Proyek';
+
+  document.getElementById('onProgress')
+    .textContent =
+    data.statusProyek.onProgress + ' Proyek';
+
+  document.getElementById('belumMulai')
+    .textContent =
+    data.statusProyek.belumMulai + ' Proyek';
+
+  document.getElementById('terlambat')
+    .textContent =
+    data.statusProyek.terlambat + ' Proyek';
+
+
+  const s = data.statusProyek;
+
+
+  if(donutChart){
+    donutChart.destroy();
+  }
+
+
+  donutChart = new Chart(
+    document.getElementById('donut'),
+    {
+
+      type:'doughnut',
+
+      data:{
+        labels:[
+          'Selesai',
+          'On Progress',
+          'Belum Mulai',
+          'Terlambat'
+        ],
+
+        datasets:[{
+
+          data:[
+            s.selesai,
+            s.onProgress,
+            s.belumMulai,
+            s.terlambat
+          ],
+
+          backgroundColor:[
+            '#16b56a',
+            '#1678ef',
+            '#707986',
+            '#ef303b'
+          ],
+
+          borderWidth:0
+
+        }]
+      },
+
+      options:{
+        cutout:'72%',
+        plugins:{
+          legend:{
+            display:false
+          }
+        },
+        responsive:true,
+        maintainAspectRatio:false
+      }
+
+    }
+  );
+
+}
+
+
+/* =========================
+   GRAFIK BULANAN
+========================= */
+
+function renderProgressBulanan(data){
+
+  if(lineChart){
+    lineChart.destroy();
+  }
+
+  lineChart = new Chart(
+    document.getElementById('line'),
+    {
+
+      type:'line',
+
+      data:{
+
+        labels:data.labels,
+
+        datasets:[{
+
+          data:data.data,
+
+          borderColor:'#1678ef',
+
+          backgroundColor:'rgba(22,120,239,.08)',
+
+          borderWidth:3,
+
+          tension:.35,
+
+          fill:true,
+
+          pointRadius:4
+
+        }]
+
+      },
+
+      options:{
+
+        responsive:true,
+
+        maintainAspectRatio:false,
+
+        plugins:{
+          legend:{
+            display:false
+          }
+        },
+
+        scales:{
+
+          y:{
+            beginAtZero:true,
+            max:100,
+
+            ticks:{
+              callback:function(v){
+                return v + '%';
+              }
+            }
+
+          },
+
+          x:{
+            grid:{
+              display:false
+            }
+
+          }
+
+        }
+
+      }
+
+    }
+  );
+
+}
+
+
+/* =========================
+   AKTIVITAS
+========================= */
+
+function renderAktivitas(data){
+
+  const box =
+    document.getElementById('aktivitas');
+
+  if(!data || data.length === 0){
+
+    box.innerHTML =
+      '<div class="activity-item">Belum ada aktivitas.</div>';
+
+    return;
+
+  }
+
+
+  box.innerHTML = data.map(x => {
+
+    let icon = '▤';
+    let cls = '';
+
+    if(x.tipe === 'progress'){
+      icon = '⌁';
+      cls = 'info';
+    }
+
+    if(x.tipe === 'kerusakan'){
+      icon = '!';
+      cls = 'warn';
+    }
+
+    return `
+
+      <div class="activity-item">
+
+        <div class="aicon">
+          ${icon}
+        </div>
+
+        <div>
+
+          <b>${escapeHTML(x.judul)}</b>
+
+          <small>
+            Oleh: ${escapeHTML(x.oleh || '-')}
+          </small>
+
+        </div>
+
+        <span class="status ${cls}">
+          ${escapeHTML(x.status)}
+        </span>
+
+      </div>
+
+    `;
+
+  }).join('');
+
+}
+
+
+/* =========================
+   PETA
+========================= */
+
+function renderPeta(data){
+
+  const mapDiv =
+    document.getElementById('map');
+
+  if(!mapDiv) return;
+
+  const miniMap = L.map(mapDiv, {
+    zoomControl: false,
+    attributionControl: false
+  }).setView([-9.63, 119.40], 11);
+
+  L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { attribution: '&copy; OSM' }
+  ).addTo(miniMap);
+
+  if(!data || data.length === 0) return;
+
+  const colors = {
+    'Selesai':'#12b76a',
+    'On Progress':'#1678ef',
+    'Belum Mulai':'#707986',
+    'Terlambat':'#ef303b'
+  };
+
+  data.forEach(function(p){
+
+    if(!p.latitude || !p.longitude) return;
+
+    L.circleMarker(
+      [p.latitude, p.longitude],
+      {
+        radius: 7,
+        fillColor: colors[p.status] || '#1678ef',
+        color: '#fff',
+        weight: 2,
+        fillOpacity: 0.9
+      }
+    ).addTo(miniMap)
+     .bindPopup(
+       '<b>' + (p.nama || '') + '</b><br>' +
+       (p.kecamatan || '') + '<br>' +
+       'Progres: ' + (p.progres || 0) + '%'
+     );
+
+  });
+
+  setTimeout(function(){ miniMap.invalidateSize(); }, 100);
+
+}
+
+
+/* =========================
+   MENU DATA
+========================= */
+
+function menu(jenis){
+
+  gasApi
+    .withSuccessHandler(function(data){
+
+      let html =
+        '<h2 style="margin-bottom:20px">Data ' +
+        jenis.toUpperCase() +
+        '</h2>';
+
+      if(!data || data.length === 0){
+
+        html +=
+          '<div class="card" style="padding:30px">' +
+          'Belum ada data.' +
+          '</div>';
+
+      }else{
+
+        html +=
+          '<div class="card" style="padding:20px;overflow:auto">';
+
+        html +=
+          '<table style="width:100%;border-collapse:collapse">';
+
+        const headers =
+          Object.keys(data[0]);
+
+        html += '<tr>';
+
+        headers.forEach(h=>{
+          html +=
+            '<th style="padding:10px;text-align:left;border-bottom:1px solid #ddd">'
+            + escapeHTML(h) +
+            '</th>';
+        });
+
+        html += '</tr>';
+
+        data.forEach(row=>{
+
+          html += '<tr>';
+
+          headers.forEach(h=>{
+
+            html +=
+              '<td style="padding:10px;border-bottom:1px solid #eee">'
+              + escapeHTML(row[h])
+              + '</td>';
+
+          });
+
+          html += '</tr>';
+
+        });
+
+        html += '</table></div>';
+
+      }
+
+      document.querySelector('.content')
+        .innerHTML = html;
+
+    })
+    .getDataMenu(jenis);
+
+}
+
+
+/* =========================
+   FUNGSI AKSI
+========================= */
+
+function buatLaporan(){
+
+  alert(
+    'Form Laporan Harian akan dihubungkan ke database Google Sheet.'
+  );
+
+}
+
+
+function dokumentasi(){
+
+  alert(
+    'Form Dokumentasi akan dihubungkan ke database Google Sheet.'
+  );
+
+}
+
+
+function updateProgress(){
+
+  alert(
+    'Form Update Progress akan dihubungkan ke database Google Sheet.'
+  );
+
+}
+
+
+function laporKerusakan(){
+
+  alert(
+    'Form Kerusakan akan dihubungkan ke database Google Sheet.'
+  );
+
+}
+
+
+function peta(){
+
+  gasApi
+    .withSuccessHandler(renderPetaPage)
+    .withFailureHandler(errorHandler)
+    .getPetaData();
+
+}
+
+
+function renderPetaPage(data){
+
+  const content =
+    document.querySelector('.content');
+
+  content.innerHTML = `
+    <h2 style="margin-bottom:6px">
+      Peta Sebaran Proyek Irigasi
+    </h2>
+    <p style="color:#66758b;margin-bottom:18px;font-size:14px">
+      Klik polygon kecamatan atau marker proyek untuk detail.
+    </p>
+    <div id="petaFull"
+         style="height:520px;border-radius:12px;overflow:hidden;border:1px solid #e7ecf3">
+    </div>
+    <div style="margin-top:14px;display:flex;flex-wrap:wrap;gap:10px"
+         id="petaLegend">
+    </div>
+  `;
+
+  const map = L.map('petaFull')
+    .setView([-9.63, 119.40], 11);
+
+  L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { attribution: '&copy; OpenStreetMap' }
+  ).addTo(map);
+
+
+  const colors = data.colors || {};
+  const geojson = data.geojson || {};
+  const center = data.center || {};
+
+
+  Object.keys(geojson).forEach(name => {
+
+    const style = {
+      color: colors[name] || '#1678ef',
+      weight: 2,
+      fillColor: colors[name] || '#1678ef',
+      fillOpacity: 0.15
+    };
+
+    const layer = L.geoJSON(geojson[name], { style }).addTo(map);
+
+    layer.bindPopup(
+      '<b>' + name + '</b>'
+    );
+
+    layer.on('mouseover', function(){
+      this.setStyle({ weight: 3, fillOpacity: 0.3 });
+    });
+
+    layer.on('mouseout', function(){
+      this.setStyle(style);
+    });
+
+  });
+
+
+  const proyek = data.proyek || [];
+
+  const statusColors = {
+    'Selesai': '#16b56a',
+    'On Progress': '#1678ef',
+    'Belum Mulai': '#707986',
+    'Terlambat': '#ef303b'
+  };
+
+  proyek.forEach(function(p){
+
+    const color = statusColors[p.status] || '#1678ef';
+
+    const marker = L.circleMarker([p.lat, p.lng], {
+      radius: 8,
+      fillColor: color,
+      color: '#fff',
+      weight: 2,
+      fillOpacity: 0.9
+    }).addTo(map);
+
+    marker.bindPopup(
+      '<div style="min-width:180px">' +
+        '<b>' + (p.nama || '') + '</b>' +
+        '<div style="font-size:12px;color:#666;margin:4px 0">' +
+          (p.kecamatan || '') +
+        '</div>' +
+        '<div style="font-size:12px">' +
+          'Progres: <b>' + p.progres + '%</b>' +
+        '</div>' +
+        '<div style="font-size:12px">' +
+          'Status: <b>' + (p.status || '-') + '</b>' +
+        '</div>' +
+      '</div>'
+    );
+
+  });
+
+
+  const legend = L.control({ position: 'bottomright' });
+
+  legend.onAdd = function(){
+
+    const div = L.DomUtil.create('div');
+
+    div.style.cssText =
+      'background:#fff;padding:12px 14px;border-radius:8px;' +
+      'font-size:12px;box-shadow:0 2px 8px rgba(0,0,0,.2);' +
+      'line-height:2;color:#1a1a1a;border:1px solid #ddd';
+
+    div.innerHTML =
+      '<div style="font-weight:700;margin-bottom:4px">' +
+        'Status Proyek' +
+      '</div>' +
+      '<div>' +
+        '<span style="display:inline-block;width:10px;height:10px;' +
+        'border-radius:50%;background:#16b56a;margin-right:6px"></span>' +
+        'Selesai' +
+      '</div>' +
+      '<div>' +
+        '<span style="display:inline-block;width:10px;height:10px;' +
+        'border-radius:50%;background:#1678ef;margin-right:6px"></span>' +
+        'On Progress' +
+      '</div>' +
+      '<div>' +
+        '<span style="display:inline-block;width:10px;height:10px;' +
+        'border-radius:50%;background:#707986;margin-right:6px"></span>' +
+        'Belum Mulai' +
+      '</div>' +
+      '<div>' +
+        '<span style="display:inline-block;width:10px;height:10px;' +
+        'border-radius:50%;background:#ef303b;margin-right:6px"></span>' +
+        'Terlambat' +
+      '</div>';
+
+    return div;
+
+  };
+
+  legend.addTo(map);
+
+
+  setTimeout(function(){ map.invalidateSize(); }, 100);
+
+}
+
+
+/* =========================
+   USER MANAGEMENT (Admin)
+========================= */
+
+function renderUserManagement(){
+
+  const content =
+    document.querySelector('.content');
+
+  content.innerHTML =
+    '<div style="display:flex;justify-content:space-between;' +
+    'align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:10px">' +
+      '<div>' +
+        '<h2 style="margin-bottom:2px">Data Master</h2>' +
+        '<p style="color:#66758b;font-size:13px">' +
+          'Kelola pengguna sistem' +
+        '</p>' +
+      '</div>' +
+      '<button onclick="showAddUserForm()" ' +
+        'style="padding:10px 18px;background:linear-gradient(90deg,#1678ef,#0c63d9);' +
+        'color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;' +
+        'cursor:pointer">' +
+        '+ Tambah User' +
+      '</button>' +
+    '</div>' +
+    '<div id="userFormArea"></div>' +
+    '<div class="card" style="padding:20px;overflow:auto" id="userTableArea">' +
+      '<div style="text-align:center;padding:20px;color:#66758b">' +
+        'Memuat data...' +
+      '</div>' +
+    '</div>';
+
+  loadUserTable();
+
+}
+
+
+function loadUserTable(){
+
+  gasApi
+    .withSuccessHandler(function(users){
+
+      if(!users || users.length === 0){
+        document.getElementById('userTableArea').innerHTML =
+          '<div style="padding:20px;text-align:center;color:#66758b">' +
+            'Belum ada user.' +
+          '</div>';
+        return;
+      }
+
+      let html =
+        '<table style="width:100%;border-collapse:collapse;font-size:14px">' +
+        '<thead><tr>' +
+          '<th style="padding:10px;text-align:left;border-bottom:2px solid #e7ecf3">' +
+            'Nama' +
+          '</th>' +
+          '<th style="padding:10px;text-align:left;border-bottom:2px solid #e7ecf3">' +
+            'Email' +
+          '</th>' +
+          '<th style="padding:10px;text-align:left;border-bottom:2px solid #e7ecf3">' +
+            'Role' +
+          '</th>' +
+          '<th style="padding:10px;text-align:left;border-bottom:2px solid #e7ecf3">' +
+            'Status' +
+          '</th>' +
+          '<th style="padding:10px;text-align:center;border-bottom:2px solid #e7ecf3">' +
+            'Aksi' +
+          '</th>' +
+        '</tr></thead><tbody>';
+
+      users.forEach(function(u){
+
+        var roleCls = 'badge-operator';
+        if(u.role === 'Admin') roleCls = 'badge-admin';
+        else if(u.role === 'Kepala Bidang') roleCls = 'badge-kabid';
+
+        var statusColor = u.status === 'Aktif' ? '#16b56a' : '#ef303b';
+
+        html +=
+          '<tr>' +
+            '<td style="padding:10px;border-bottom:1px solid #f0f0f0">' +
+              escapeHTML(u.nama) +
+            '</td>' +
+            '<td style="padding:10px;border-bottom:1px solid #f0f0f0">' +
+              escapeHTML(u.email) +
+            '</td>' +
+            '<td style="padding:10px;border-bottom:1px solid #f0f0f0">' +
+              '<span class="badge-role ' + roleCls + '">' +
+                escapeHTML(u.role) +
+              '</span>' +
+            '</td>' +
+            '<td style="padding:10px;border-bottom:1px solid #f0f0f0">' +
+              '<span style="color:' + statusColor + ';font-weight:600">' +
+                escapeHTML(u.status) +
+              '</span>' +
+            '</td>' +
+            '<td style="padding:10px;border-bottom:1px solid #f0f0f0;text-align:center">' +
+              '<button onclick="showEditUserForm(\'' + u.id + '\')" ' +
+                'style="padding:5px 10px;background:#eef4ff;color:#1678ef;' +
+                'border:none;border-radius:6px;cursor:pointer;font-size:12px;' +
+                'margin-right:4px" title="Edit">' +
+                '✎ Edit' +
+              '</button>' +
+              '<button onclick="confirmDeleteUser(\'' + u.id + '\',\'' +
+                escapeHTML(u.nama) + '\')" ' +
+                'style="padding:5px 10px;background:#fff0f0;color:#e33b43;' +
+                'border:none;border-radius:6px;cursor:pointer;font-size:12px"' +
+                ' title="Hapus">' +
+                '✕ Hapus' +
+              '</button>' +
+            '</td>' +
+          '</tr>';
+
+      });
+
+      html += '</tbody></table>';
+      document.getElementById('userTableArea').innerHTML = html;
+
+    })
+    .getUsers();
+
+}
+
+
+function showAddUserForm(){
+
+  document.getElementById('userFormArea').innerHTML =
+    '<div class="card" style="padding:20px;margin-bottom:20px">' +
+      '<h3 style="margin-bottom:16px;font-size:16px">Tambah User Baru</h3>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+        '<div>' +
+          '<label style="display:block;font-size:13px;color:#445566;' +
+            'margin-bottom:4px;font-weight:600">Nama Lengkap</label>' +
+          '<input id="newNama" type="text" ' +
+            'style="width:100%;padding:9px 12px;border:1px solid #dde3eb;' +
+            'border-radius:8px;font-size:14px;outline:none" ' +
+            'placeholder="Nama lengkap">' +
+        '</div>' +
+        '<div>' +
+          '<label style="display:block;font-size:13px;color:#445566;' +
+            'margin-bottom:4px;font-weight:600">Email</label>' +
+          '<input id="newEmail" type="email" ' +
+            'style="width:100%;padding:9px 12px;border:1px solid #dde3eb;' +
+            'border-radius:8px;font-size:14px;outline:none" ' +
+            'placeholder="email@sumbar.go.id">' +
+        '</div>' +
+        '<div>' +
+          '<label style="display:block;font-size:13px;color:#445566;' +
+            'margin-bottom:4px;font-weight:600">Password</label>' +
+          '<input id="newPass" type="password" ' +
+            'style="width:100%;padding:9px 12px;border:1px solid #dde3eb;' +
+            'border-radius:8px;font-size:14px;outline:none" ' +
+            'placeholder="Minimal 6 karakter">' +
+        '</div>' +
+        '<div>' +
+          '<label style="display:block;font-size:13px;color:#445566;' +
+            'margin-bottom:4px;font-weight:600">Role</label>' +
+          '<select id="newRole" ' +
+            'style="width:100%;padding:9px 12px;border:1px solid #dde3eb;' +
+            'border-radius:8px;font-size:14px;background:#fff">' +
+            '<option value="Operator">Operator</option>' +
+            '<option value="Kepala Bidang">Kepala Bidang</option>' +
+            '<option value="Admin">Admin</option>' +
+          '</select>' +
+        '</div>' +
+      '</div>' +
+      '<div style="margin-top:16px;display:flex;gap:8px">' +
+        '<button onclick="submitAddUser()" ' +
+          'style="padding:9px 20px;background:linear-gradient(90deg,#16b56a,#0fa35b);' +
+          'color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;' +
+          'cursor:pointer">' +
+          'Simpan' +
+        '</button>' +
+        '<button onclick="document.getElementById(\'userFormArea\').innerHTML=\'\'" ' +
+          'style="padding:9px 20px;background:#f0f1f3;color:#445566;' +
+          'border:none;border-radius:8px;font-size:14px;cursor:pointer">' +
+          'Batal' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById('newNama').focus();
+
+}
+
+
+function submitAddUser(){
+
+  var nama = document.getElementById('newNama').value.trim();
+  var email = document.getElementById('newEmail').value.trim();
+  var pass = document.getElementById('newPass').value;
+  var role = document.getElementById('newRole').value;
+
+  if(!nama || !email || !pass){
+    alert('Semua field wajib diisi');
+    return;
+  }
+
+  if(pass.length < 6){
+    alert('Password minimal 6 karakter');
+    return;
+  }
+
+  gasApi
+    .withSuccessHandler(function(res){
+      if(res.success){
+        document.getElementById('userFormArea').innerHTML = '';
+        loadUserTable();
+      } else {
+        alert(res.message || 'Gagal menambah user');
+      }
+    })
+    .addUser({ nama:nama, email:email, password:pass, role:role });
+
+}
+
+
+function showEditUserForm(userId){
+
+  gasApi
+    .withSuccessHandler(function(users){
+
+      var u = users.find(function(x){ return x.id === userId; });
+      if(!u) return;
+
+      document.getElementById('userFormArea').innerHTML =
+        '<div class="card" style="padding:20px;margin-bottom:20px">' +
+          '<h3 style="margin-bottom:16px;font-size:16px">Edit User</h3>' +
+          '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">' +
+            '<div>' +
+              '<label style="display:block;font-size:13px;color:#445566;' +
+                'margin-bottom:4px;font-weight:600">Nama</label>' +
+              '<input id="editNama" type="text" ' +
+                'style="width:100%;padding:9px 12px;border:1px solid #dde3eb;' +
+                'border-radius:8px;font-size:14px;outline:none" ' +
+                'value="' + escapeHTML(u.nama) + '">' +
+            '</div>' +
+            '<div>' +
+              '<label style="display:block;font-size:13px;color:#445566;' +
+                'margin-bottom:4px;font-weight:600">Email</label>' +
+              '<input id="editEmail" type="email" ' +
+                'style="width:100%;padding:9px 12px;border:1px solid #dde3eb;' +
+                'border-radius:8px;font-size:14px;outline:none" ' +
+                'value="' + escapeHTML(u.email) + '">' +
+            '</div>' +
+            '<div>' +
+              '<label style="display:block;font-size:13px;color:#445566;' +
+                'margin-bottom:4px;font-weight:600">Password Baru (opsional)</label>' +
+              '<input id="editPass" type="password" ' +
+                'style="width:100%;padding:9px 12px;border:1px solid #dde3eb;' +
+                'border-radius:8px;font-size:14px;outline:none" ' +
+                'placeholder="Kosongkan jika tidak ubah">' +
+            '</div>' +
+            '<div>' +
+              '<label style="display:block;font-size:13px;color:#445566;' +
+                'margin-bottom:4px;font-weight:600">Role</label>' +
+              '<select id="editRole" ' +
+                'style="width:100%;padding:9px 12px;border:1px solid #dde3eb;' +
+                'border-radius:8px;font-size:14px;background:#fff">' +
+                '<option value="Operator"' +
+                  (u.role==='Operator'?' selected':'') + '>Operator</option>' +
+                '<option value="Kepala Bidang"' +
+                  (u.role==='Kepala Bidang'?' selected':'') +
+                  '>Kepala Bidang</option>' +
+                '<option value="Admin"' +
+                  (u.role==='Admin'?' selected':'') + '>Admin</option>' +
+              '</select>' +
+            '</div>' +
+            '<div>' +
+              '<label style="display:block;font-size:13px;color:#445566;' +
+                'margin-bottom:4px;font-weight:600">Status</label>' +
+              '<select id="editStatus" ' +
+                'style="width:100%;padding:9px 12px;border:1px solid #dde3eb;' +
+                'border-radius:8px;font-size:14px;background:#fff">' +
+                '<option value="Aktif"' +
+                  (u.status==='Aktif'?' selected':'') + '>Aktif</option>' +
+                '<option value="Nonaktif"' +
+                  (u.status==='Nonaktif'?' selected':'') +
+                  '>Nonaktif</option>' +
+              '</select>' +
+            '</div>' +
+          '</div>' +
+          '<div style="margin-top:16px;display:flex;gap:8px">' +
+            '<button onclick="submitEditUser(\'' + u.id + '\')" ' +
+              'style="padding:9px 20px;background:linear-gradient(90deg,#1678ef,#0c63d9);' +
+              'color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;' +
+              'cursor:pointer">' +
+              'Simpan Perubahan' +
+            '</button>' +
+            '<button onclick="document.getElementById(\'userFormArea\').innerHTML=\'\'" ' +
+              'style="padding:9px 20px;background:#f0f1f3;color:#445566;' +
+              'border:none;border-radius:8px;font-size:14px;cursor:pointer">' +
+              'Batal' +
+            '</button>' +
+          '</div>' +
+        '</div>';
+
+    })
+    .getUsers();
+
+}
+
+
+function submitEditUser(userId){
+
+  var data = {
+    id: userId,
+    nama: document.getElementById('editNama').value.trim(),
+    email: document.getElementById('editEmail').value.trim(),
+    role: document.getElementById('editRole').value,
+    status: document.getElementById('editStatus').value
+  };
+
+  var pass = document.getElementById('editPass').value;
+  if(pass) data.password = pass;
+
+  if(!data.nama || !data.email){
+    alert('Nama dan email wajib diisi');
+    return;
+  }
+
+  gasApi
+    .withSuccessHandler(function(res){
+      if(res.success){
+        document.getElementById('userFormArea').innerHTML = '';
+        loadUserTable();
+      } else {
+        alert(res.message || 'Gagal update user');
+      }
+    })
+    .updateUser(data);
+
+}
+
+
+function confirmDeleteUser(userId, nama){
+
+  if(!confirm('Hapus user "' + nama + '"?\n\nTindakan ini tidak dapat dibatalkan.')){
+    return;
+  }
+
+  gasApi
+    .withSuccessHandler(function(res){
+      if(res.success){
+        loadUserTable();
+      } else {
+        alert(res.message || 'Gagal menghapus user');
+      }
+    })
+    .deleteUser(userId);
+
+}
+
+
+function laporan(){
+
+  alert(
+    'Modul laporan sedang disiapkan.'
+  );
+
+}
+
+
+function dashboard(){
+
+  location.reload();
+
+}
+
+
+/* =========================
+   ERROR
+========================= */
+
+function errorHandler(error){
+
+  console.error(error);
+
+  alert(
+    'Terjadi kesalahan: ' +
+    (error.message || error)
+  );
+
+}
+
+
+/* =========================
+   SECURITY
+========================= */
+
+function escapeHTML(value){
+
+  if(value === null ||
+     value === undefined){
+
+    return '';
+
+  }
+
+  return String(value)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+
+}
+
+
+/* =========================
+   AUTH
+========================= */
+
+var currentUser = null;
+
+
+function checkSession(){
+
+  var sid = sessionStorage.getItem('simonir_session');
+
+  if(!sid){
+    showLogin();
+    return;
+  }
+
+  gasApi
+    .withSuccessHandler(function(user){
+
+      if(!user){
+        showLogin();
+        return;
+      }
+
+      currentUser = user;
+      hideLogin();
+      applyRole(user);
+      tampilTanggal();
+      loadDashboard();
+
+    })
+    .withFailureHandler(function(){
+      showLogin();
+    })
+    .getSession(sid);
+
+}
+
+
+function showLogin(){
+  document.getElementById('loginOverlay').style.display = 'grid';
+  document.getElementById('appMain').style.display = 'none';
+}
+
+
+function hideLogin(){
+  document.getElementById('loginOverlay').style.display = 'none';
+  document.getElementById('appMain').style.display = 'flex';
+}
+
+
+function doLogin(){
+
+  var email = document.getElementById('loginEmail').value.trim();
+  var pass = document.getElementById('loginPass').value;
+  var errBox = document.getElementById('loginErr');
+  var btn = document.getElementById('loginBtn');
+
+  if(!email || !pass){
+    errBox.textContent = 'Email dan password harus diisi';
+    errBox.style.display = 'block';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = 'Masuk...';
+  errBox.style.display = 'none';
+
+  gasApi
+    .withSuccessHandler(function(res){
+
+      btn.disabled = false;
+      btn.textContent = 'Masuk';
+
+      if(!res.success){
+        errBox.textContent = res.message;
+        errBox.style.display = 'block';
+        return;
+      }
+
+      sessionStorage.setItem('simonir_session', res.session);
+      currentUser = res.user;
+      hideLogin();
+      applyRole(res.user);
+      tampilTanggal();
+      loadDashboard();
+
+    })
+    .withFailureHandler(function(e){
+
+      btn.disabled = false;
+      btn.textContent = 'Masuk';
+      errBox.textContent = 'Terjadi kesalahan koneksi';
+      errBox.style.display = 'block';
+
+    })
+    .login(email, pass);
+
+}
+
+
+function doLogout(){
+
+  var sid = sessionStorage.getItem('simonir_session');
+
+  if(sid){
+    gasApi.logout(sid);
+  }
+
+  sessionStorage.removeItem('simonir_session');
+  currentUser = null;
+  showLogin();
+
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPass').value = '';
+
+}
+
+
+function applyRole(user){
+
+  if(!user) return;
+
+  var initials = user.nama.split(' ')
+    .map(function(w){ return w[0]; })
+    .join('')
+    .substring(0, 2)
+    .toUpperCase();
+
+  document.getElementById('userAvatar').textContent = initials;
+  document.getElementById('userName').textContent = user.nama;
+
+  var role = user.role || 'Operator';
+  var badgeCls = 'badge-operator';
+  var roleLabel = role;
+
+  if(role === 'Admin'){
+    badgeCls = 'badge-admin';
+  } else if(role === 'Kepala Bidang'){
+    badgeCls = 'badge-kabid';
+  }
+
+  document.getElementById('userRole').innerHTML =
+    '<span class="badge-role ' + badgeCls + '">' +
+    roleLabel + '</span>';
+
+  // Sembunyikan menu sesuai role
+  var navLinks = document.querySelectorAll('.nav a[data-role]');
+
+  navLinks.forEach(function(a){
+
+    var required = a.getAttribute('data-role');
+
+    if(required === 'admin' && role !== 'Admin'){
+      a.style.display = 'none';
+    } else if(required === 'kabid' && role === 'Operator'){
+      a.style.display = 'none';
+    } else {
+      a.style.display = '';
+    }
+
+  });
+
+}
+
+
+/* =========================
+   TANGGAL
+========================= */
+
+function tampilTanggal(){
+
+  const d = new Date();
+
+  const options = {
+    weekday:'long',
+    day:'numeric',
+    month:'long',
+    year:'numeric'
+  };
+
+  document.getElementById('tanggal')
+    .textContent =
+    d.toLocaleDateString(
+      'id-ID',
+      options
+    );
+
+}
+
+
+/* =========================
+   START
+========================= */
+
+document.addEventListener(
+  'DOMContentLoaded',
+  function(){
+    checkSession();
+  }
+);
+
+</script>
+
+</body>
+
+</html>

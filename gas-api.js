@@ -1,0 +1,63 @@
+/**
+ * GAS API Bridge - replaces google.script.run with fetch()
+ * Deploy GAS as web app, set GAS_URL below.
+ */
+
+const GAS_URL = 'YOUR_GAS_WEB_APP_URL'; // <-- ganti setelah deploy GAS
+
+const gasApi = {
+  _successHandler: null,
+  _failureHandler: null,
+
+  withSuccessHandler(fn) {
+    this._successHandler = fn;
+    return this;
+  },
+
+  withFailureHandler(fn) {
+    this._failureHandler = fn;
+    return this;
+  },
+
+  async _call(action, params) {
+    try {
+      const res = await fetch(GAS_URL, {
+        method: 'POST',
+        contentType: 'application/json',
+        body: JSON.stringify({ action, params }),
+      });
+      const data = await res.json();
+      if (this._successHandler) this._successHandler(data);
+    } catch (err) {
+      if (this._failureHandler) this._failureHandler(err);
+    } finally {
+      this._successHandler = null;
+      this._failureHandler = null;
+    }
+  },
+
+  // Auth
+  login(email, password) { return this._call('login', { email, password }); },
+  logout(sessionId) { return this._call('logout', { sessionId }); },
+  getSession(sessionId) { return this._call('getSession', { sessionId }); },
+
+  // Dashboard
+  getDashboardData() { return this._call('getDashboardData'); },
+  getAktivitas() { return this._call('getAktivitas'); },
+  getProgressBulanan() { return this._call('getProgressBulanan'); },
+  getPetaProyek() { return this._call('getPetaProyek'); },
+  getPetaData() { return this._call('getPetaData'); },
+
+  // Data
+  getDataMenu(menu) { return this._call('getDataMenu', { menu }); },
+  getUsers() { return this._call('getUsers'); },
+  addUser(data) { return this._call('addUser', { data }); },
+  updateUser(data) { return this._call('updateUser', { data }); },
+  deleteUser(userId) { return this._call('deleteUser', { userId }); },
+
+  // CRUD
+  tambahProyek(data) { return this._call('tambahProyek', { data }); },
+  tambahLaporan(data) { return this._call('tambahLaporan', { data }); },
+  tambahKerusakan(data) { return this._call('tambahKerusakan', { data }); },
+  updateProgres(data) { return this._call('updateProgres', { data }); },
+};
