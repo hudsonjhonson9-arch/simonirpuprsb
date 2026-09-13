@@ -39,7 +39,7 @@ const gasApi = {
   },
 
   // Auth
-  login(email, password) { return this._call('login', { email, password }); },
+  login(username, password) { return this._call('login', { username, email: username, password }); },
   logout(sessionId) { return this._call('logout', { sessionId }); },
   getSession(sessionId) { return this._call('getSession', { sessionId }); },
 
