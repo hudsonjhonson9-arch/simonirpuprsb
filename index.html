@@ -1826,6 +1826,9 @@ function loadUserTable(){
             'Nama' +
           '</th>' +
           '<th style="padding:12px;text-align:left;border-bottom:2px solid var(--border-color);color:var(--text-main);font-weight:700">' +
+            'NIP' +
+          '</th>' +
+          '<th style="padding:12px;text-align:left;border-bottom:2px solid var(--border-color);color:var(--text-main);font-weight:700">' +
             'Email / Username' +
           '</th>' +
           '<th style="padding:12px;text-align:left;border-bottom:2px solid var(--border-color);color:var(--text-main);font-weight:700">' +
@@ -1850,6 +1853,9 @@ function loadUserTable(){
           '<tr>' +
             '<td style="padding:12px;border-bottom:1px solid #f1f5f9;color:var(--text-main);font-weight:600">' +
               escapeHTML(u.nama) +
+            '</td>' +
+            '<td style="padding:12px;border-bottom:1px solid #f1f5f9;color:var(--text-muted)">' +
+              escapeHTML(u.nip || '-') +
             '</td>' +
             '<td style="padding:12px;border-bottom:1px solid #f1f5f9;color:var(--text-muted)">' +
               escapeHTML(u.email) +
@@ -1903,6 +1909,14 @@ function showAddUserForm(){
         '</div>' +
         '<div>' +
           '<label style="display:block;font-size:13px;color:var(--text-main);' +
+            'margin-bottom:6px;font-weight:600">NIP</label>' +
+          '<input id="newNip" type="text" ' +
+            'style="width:100%;padding:10px 14px;border:1px solid var(--border-color);' +
+            'border-radius:10px;font-size:14px;outline:none" ' +
+            'placeholder="19890412 201503 1 002">' +
+        '</div>' +
+        '<div>' +
+          '<label style="display:block;font-size:13px;color:var(--text-main);' +
             'margin-bottom:6px;font-weight:600">Email / Username</label>' +
           '<input id="newEmail" type="text" ' +
             'style="width:100%;padding:10px 14px;border:1px solid var(--border-color);' +
@@ -1949,6 +1963,7 @@ function showAddUserForm(){
 
 function submitAddUser(){
   var nama = document.getElementById('newNama').value.trim();
+  var nip = document.getElementById('newNip').value.trim();
   var email = document.getElementById('newEmail').value.trim();
   var pass = document.getElementById('newPass').value;
   var role = document.getElementById('newRole').value;
@@ -1972,7 +1987,7 @@ function submitAddUser(){
         alert(res.message || 'Gagal menambah user');
       }
     })
-    .addUser({ nama: nama, email: email, password: pass, role: role });
+    .addUser({ nama: nama, nip: nip, email: email, password: pass, role: role });
 }
 
 function showEditUserForm(userId){
@@ -1992,6 +2007,14 @@ function showEditUserForm(userId){
                 'style="width:100%;padding:10px 14px;border:1px solid var(--border-color);' +
                 'border-radius:10px;font-size:14px;outline:none" ' +
                 'value="' + escapeHTML(u.nama) + '">' +
+            '</div>' +
+            '<div>' +
+              '<label style="display:block;font-size:13px;color:var(--text-main);' +
+                'margin-bottom:6px;font-weight:600">NIP</label>' +
+              '<input id="editNip" type="text" ' +
+                'style="width:100%;padding:10px 14px;border:1px solid var(--border-color);' +
+                'border-radius:10px;font-size:14px;outline:none" ' +
+                'value="' + escapeHTML(u.nip || '') + '">' +
             '</div>' +
             '<div>' +
               '<label style="display:block;font-size:13px;color:var(--text-main);' +
@@ -2053,6 +2076,7 @@ function submitEditUser(userId){
   var data = {
     id: userId,
     nama: document.getElementById('editNama').value.trim(),
+    nip: document.getElementById('editNip').value.trim(),
     email: document.getElementById('editEmail').value.trim(),
     role: document.getElementById('editRole').value,
     status: document.getElementById('editStatus').value
