@@ -56,6 +56,7 @@ const gasApi = {
   addUser(data) { return this._call('addUser', { data }); },
   updateUser(data) { return this._call('updateUser', { data }); },
   deleteUser(userId) { return this._call('deleteUser', { userId }); },
+  setupDatabase() { return this._call('setupDatabase'); },
 
   // CRUD
   tambahProyek(data) { return this._call('tambahProyek', { data }); },
