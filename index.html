@@ -1446,12 +1446,26 @@ function renderPeta(data){
   const miniMap = L.map(mapDiv, {
     zoomControl: false,
     attributionControl: false
-  }).setView([-9.63, 119.40], 11);
+  }).setView([-9.63, 119.38], 10);
 
   L.tileLayer(
     'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
     { attribution: '&copy; OSM' }
   ).addTo(miniMap);
+
+  // Load full GeoJSON for all kecamatan if available in global cache or fetch
+  if(window.cachedPetaGeoJSON){
+    renderGeoJSONOnMiniMap(miniMap, window.cachedPetaGeoJSON);
+  } else {
+    gasApi
+      .withSuccessHandler(function(petaData){
+        if(petaData && petaData.geojson){
+          window.cachedPetaGeoJSON = petaData;
+          renderGeoJSONOnMiniMap(miniMap, petaData);
+        }
+      })
+      .getPetaData();
+  }
 
   if(!data || data.length === 0) return;
 
@@ -1483,6 +1497,22 @@ function renderPeta(data){
   });
 
   setTimeout(function(){ miniMap.invalidateSize(); }, 100);
+}
+
+function renderGeoJSONOnMiniMap(map, petaData){
+  const colors = petaData.colors || {};
+  const geojson = petaData.geojson || {};
+
+  Object.keys(geojson).forEach(name => {
+    const style = {
+      color: colors[name] || '#0284c7',
+      weight: 1.5,
+      fillColor: colors[name] || '#0284c7',
+      fillOpacity: 0.12
+    };
+
+    L.geoJSON(geojson[name], { style }).addTo(map);
+  });
 }
 
 function formatTableCellValue(header, val) {
