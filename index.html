@@ -2095,7 +2095,216 @@ function confirmDeleteUser(userId, nama){
 }
 
 function laporan(){
-  alert('Modul laporan sedang disiapkan.');
+  saveActivePage('laporan');
+  const content = document.querySelector('.content');
+
+  content.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+      <div>
+        <h2 style="margin-bottom:4px;font-size:24px;font-weight:800;color:var(--text-main)">
+          <i class="fa-solid fa-file-pdf" style="color:var(--danger);margin-right:8px"></i>Laporan Eksekutif Monitoring
+        </h2>
+        <p style="color:var(--text-muted);font-size:14px">
+          Pusat pencetakan dan ekspor rekapitulasi progres irigasi Kabupaten Sumba Barat
+        </p>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="cetakLaporanEksekutif()" 
+                style="padding:10px 20px;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 12px rgba(2,132,199,0.3)">
+          <i class="fa-solid fa-print"></i> Cetak / Simpan PDF
+        </button>
+      </div>
+    </div>
+
+    <!-- FILTER BOARD -->
+    <div class="card" style="padding:20px;margin-bottom:24px">
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:14px;color:var(--text-main)">
+        <i class="fa-solid fa-filter" style="color:var(--primary);margin-right:6px"></i>Filter Rekapitulasi Laporan
+      </h3>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:16px">
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Jenis Laporan</label>
+          <select id="filterJenisLaporan" onchange="renderKontenLaporan()" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:13.5px;background:#fff;outline:none">
+            <option value="rekap">Rekapitulasi Proyek Irigasi</option>
+            <option value="harian">Rekap Laporan Harian Field Worker</option>
+            <option value="kerusakan">Daftar Kerusakan Jaringan Irigasi</option>
+          </select>
+        </div>
+        <div>
+          <label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Kecamatan</label>
+          <select id="filterKecamatanLaporan" onchange="renderKontenLaporan()" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:13.5px;background:#fff;outline:none">
+            <option value="semua">Semua Kecamatan</option>
+            <option value="Kota Waikabubak">Kota Waikabubak</option>
+            <option value="Loli">Loli</option>
+            <option value="Lamboya">Lamboya</option>
+            <option value="Wanokaka">Wanokaka</option>
+            <option value="Laboya Barat">Laboya Barat</option>
+            <option value="Tana Righu">Tana Righu</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- AREA PRINTER FRIENDLY / PREVIEW -->
+    <div id="printArea" class="card" style="padding:30px;background:#fff">
+      <div style="text-align:center;padding:40px;color:var(--text-muted)">
+        <i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color:var(--primary);margin-bottom:12px"></i>
+        <div style="font-weight:600;font-size:14px">Menyiapkan data laporan eksekutif...</div>
+      </div>
+    </div>
+  `;
+
+  renderKontenLaporan();
+}
+
+let cacheLaporanData = {};
+
+function renderKontenLaporan(){
+  const printArea = document.getElementById('printArea');
+  const jenis = document.getElementById('filterJenisLaporan')?.value || 'rekap';
+  const kec = document.getElementById('filterKecamatanLaporan')?.value || 'semua';
+
+  printArea.innerHTML = `
+    <div style="text-align:center;padding:40px;color:var(--text-muted)">
+      <i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color:var(--primary);margin-bottom:12px"></i>
+      <div style="font-weight:600;font-size:14px">Memuat data rekapitulasi...</div>
+    </div>
+  `;
+
+  // Determine target endpoint menu
+  let targetMenu = 'proyek';
+  if (jenis === 'harian') targetMenu = 'laporan';
+  if (jenis === 'kerusakan') targetMenu = 'kerusakan';
+
+  gasApi
+    .withSuccessHandler(function(data){
+      cacheLaporanData = { jenis, kec, rawData: data };
+      generateHTMLPrintPreview(jenis, kec, data);
+    })
+    .withFailureHandler(errorHandler)
+    .getDataMenu(targetMenu);
+}
+
+function generateHTMLPrintPreview(jenis, kec, data){
+  const printArea = document.getElementById('printArea');
+  if(!data || data.length === 0){
+    printArea.innerHTML = `
+      <div style="padding:40px;text-align:center;color:var(--text-muted)">
+        Tidak ada data laporan yang sesuai dengan filter.
+      </div>
+    `;
+    return;
+  }
+
+  // Filter Kecamatan if selected
+  let filtered = data;
+  if(kec !== 'semua'){
+    filtered = data.filter(item => {
+      const k = String(item.Kecamatan || item.kecamatan || '').toLowerCase();
+      return k.includes(kec.toLowerCase());
+    });
+  }
+
+  const dateNow = new Date().toLocaleDateString('id-ID', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  let titleLaporan = 'REKAPITULASI PROGRES PROYEK IRIGASI';
+  if(jenis === 'harian') titleLaporan = 'REKAPITULASI LAPORAN HARIAN LAPANGAN';
+  if(jenis === 'kerusakan') titleLaporan = 'REKAPITULASI KERUSAKAN JARINGAN IRIGASI';
+
+  let tableHeaderHTML = '';
+  let tableBodyHTML = '';
+
+  if (filtered.length > 0) {
+    const headers = Object.keys(filtered[0]);
+    tableHeaderHTML = '<tr>' + headers.map(h => `<th style="padding:10px 12px;border:1px solid #cbd5e1;background:#f1f5f9;color:#0f172a;font-weight:700;font-size:12px;text-align:left">${escapeHTML(h)}</th>`).join('') + '</tr>';
+    
+    tableBodyHTML = filtered.map(row => {
+      return '<tr>' + headers.map(h => `<td style="padding:9px 12px;border:1px solid #e2e8f0;font-size:12px;color:#334155">${formatTableCellValue(h, row[h])}</td>`).join('') + '</tr>';
+    }).join('');
+  }
+
+  printArea.innerHTML = `
+    <div id="printableContent" style="font-family:'Plus Jakarta Sans', sans-serif">
+      
+      <!-- KOP SURAT DINAS -->
+      <div style="display:flex;align-items:center;gap:20px;border-bottom:3px double #0f172a;padding-bottom:16px;margin-bottom:20px">
+        <img src="logo.png" alt="Logo PUPR" style="width:65px;height:auto;object-fit:contain">
+        <div style="flex:1;text-align:center">
+          <h4 style="font-size:15px;font-weight:800;color:#0f172a;margin:0;letter-spacing:0.5px">PEMERINTAH KABUPATEN SUMBA BARAT</h4>
+          <h3 style="font-size:17px;font-weight:800;color:#0284c7;margin:2px 0">DINAS PEKERJAAN UMUM DAN PENATAAN RUANG</h3>
+          <p style="font-size:11px;color:#64748b;margin:0">Bidang Sumber Daya Air (SDA) - Sistem Informasi Monitoring Irigasi (SI MONIR)</p>
+          <p style="font-size:10px;color:#94a3b8;margin:2px 0 0 0">Jl. Bhayangkara No. 1, Waikabubak, Kabupaten Sumba Barat, Nusa Tenggara Timur</p>
+        </div>
+      </div>
+
+      <!-- TITLE -->
+      <div style="text-align:center;margin-bottom:24px">
+        <h3 style="font-size:16px;font-weight:800;color:#0f172a;text-transform:uppercase;margin-bottom:4px;letter-spacing:-0.3px">${titleLaporan}</h3>
+        <p style="font-size:12px;color:#64748b;margin:0">Filter Kecamatan: <b>${escapeHTML(kec.toUpperCase())}</b> | Tanggal Cetak: <b>${dateNow}</b></p>
+      </div>
+
+      <!-- TABLE DATA -->
+      <div style="overflow-x:auto;margin-bottom:30px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead>
+            ${tableHeaderHTML}
+          </thead>
+          <tbody>
+            ${tableBodyHTML}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- TANDA TANGAN -->
+      <div style="display:flex;justify-content:space-between;margin-top:40px;page-break-inside:avoid">
+        <div style="text-align:center;width:220px">
+          <p style="font-size:12px;color:#475569;margin-bottom:60px">Dibuat Oleh,<br><b>Petugas Operator SDA</b></p>
+          <p style="font-size:12px;font-weight:700;color:#0f172a;text-decoration:underline;margin:0">${escapeHTML(currentUser ? currentUser.nama : 'Operator SIMONIR')}</p>
+          <p style="font-size:11px;color:#64748b;margin:0">NIP. 19890412 201503 1 002</p>
+        </div>
+
+        <div style="text-align:center;width:240px">
+          <p style="font-size:12px;color:#475569;margin-bottom:60px">Mengetahui,<br><b>Kepala Bidang Sumber Daya Air</b></p>
+          <p style="font-size:12px;font-weight:700;color:#0f172a;text-decoration:underline;margin:0">Ir. Loudry U. Haenael, ST., MT</p>
+          <p style="font-size:11px;color:#64748b;margin:0">NIP. 19780824 200501 1 008</p>
+        </div>
+      </div>
+
+    </div>
+  `;
+}
+
+function cetakLaporanEksekutif(){
+  const elem = document.getElementById('printableContent');
+  if(!elem){
+    alert('Laporan belum siap dicetak.');
+    return;
+  }
+
+  const printWindow = window.open('', '_blank', 'width=900,height=700');
+  printWindow.document.write(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Laporan Eksekutif SI MONIR - Dinas PUPR Sumba Barat</title>
+      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+      <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; margin: 30px; color: #0f172a; }
+        .status { padding: 3px 8px; border-radius: 6px; font-weight:700; font-size:11px; display:inline-block; }
+        .status.info { background: #e0f2fe; color: #0284c7; }
+        .status.warn { background: #fee2e2; color: #ef4444; }
+        @page { size: A4 landscape; margin: 15mm; }
+        @media print {
+          body { margin: 0; }
+        }
+      </style>
+    </head>
+    <body onload="window.print(); setTimeout(function(){ window.close(); }, 500);">
+      ${elem.innerHTML}
+    </body>
+    </html>
+  `);
+  printWindow.document.close();
 }
 
 /* =========================
@@ -2125,6 +2334,10 @@ function restoreActivePage(){
       var link = document.querySelector('.nav a[onclick*="peta"]');
       setActive(link);
       peta();
+    } else if(p.page === 'laporan'){
+      var link = document.querySelector('.nav a[onclick*="laporan"]');
+      setActive(link);
+      laporan();
     } else if(p.page === 'master'){
       var link = document.querySelector('.nav a[onclick*="renderUserManagement"]');
       setActive(link);
