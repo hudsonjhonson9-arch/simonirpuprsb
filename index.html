@@ -1648,20 +1648,32 @@ function menu(jenis){
    FUNGSI AKSI
 ========================= */
 
+function setActiveNav(jenis){
+  document.querySelectorAll('.nav a').forEach(function(a){
+    var on = a.getAttribute('onclick') || '';
+    a.classList.remove('active');
+    if(on.indexOf("menu('" + jenis + "')") !== -1) a.classList.add('active');
+  });
+}
+
 function buatLaporan(){
-  alert('Form Laporan Harian akan dihubungkan ke database Google Sheet.');
+  setActiveNav('laporan');
+  menu('laporan');
 }
 
 function dokumentasi(){
-  alert('Form Dokumentasi akan dihubungkan ke database Google Sheet.');
+  setActiveNav('dokumentasi');
+  menu('dokumentasi');
 }
 
 function updateProgress(){
-  alert('Form Update Progress akan dihubungkan ke database Google Sheet.');
+  setActiveNav('progress');
+  menu('progress');
 }
 
 function laporKerusakan(){
-  alert('Form Kerusakan akan dihubungkan ke database Google Sheet.');
+  setActiveNav('kerusakan');
+  menu('kerusakan');
 }
 
 function peta(){
