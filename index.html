@@ -969,7 +969,7 @@ footer {
 
     <a href="#" onclick="setActive(this); renderUserManagement();" data-role="admin">
       <span class="ico"><i class="fa-solid fa-users-gear"></i></span>
-      Data Master
+      Manajemen User
     </a>
 
     <a href="#" onclick="setActive(this); laporan();" data-role="kabid">
@@ -1589,59 +1589,494 @@ function formatTableCellValue(header, val) {
 
 function menu(jenis){
   saveActivePage('menu', jenis);
-  const content = document.querySelector('.content');
-  content.innerHTML = `
-    <div class="card" style="padding:50px;text-align:center;color:var(--text-muted)">
-      <i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color:var(--primary);margin-bottom:12px"></i>
-      <div style="font-weight:600;font-size:14px">Memuat data ${escapeHTML(jenis.toUpperCase())}...</div>
-    </div>
-  `;
+  if(jenis === 'laporan') return menuLaporan();
+  if(jenis === 'dokumentasi') return menuDokumentasi();
+  if(jenis === 'progress') return menuProgress();
+  if(jenis === 'kerusakan') return menuKerusakan();
+  if(jenis === 'rab') return menuRab();
+  if(jenis === 'proyek') return menuProyek();
+  menuGeneric(jenis);
+}
 
-  gasApi
-    .withSuccessHandler(function(data){
-      let html =
-        '<h2 style="margin-bottom:20px;font-size:22px;font-weight:800;color:var(--text-main)">Data ' +
-        jenis.toUpperCase() +
-        '</h2>';
+function loadProyekOptions(callback){
+  gasApi.withSuccessHandler(function(data){
+    var opts = '<option value="">-- Pilih Proyek --</option>';
+    if(data) data.forEach(function(p){
+      opts += '<option value="'+escapeHTML(p.ID)+'">'+escapeHTML(p['Nama Proyek'])+'</option>';
+    });
+    callback(opts);
+  }).getDataMenu('proyek');
+}
 
-      if(!data || data.length === 0){
-        html +=
-          '<div class="card" style="padding:30px;text-align:center;color:var(--text-muted)">' +
-          'Belum ada data.' +
-          '</div>';
-      } else {
-        html += '<div class="card" style="padding:20px;overflow:auto">';
-        html += '<table style="width:100%;border-collapse:collapse;font-size:14px">';
+function menuGeneric(jenis){
+  var content = document.querySelector('.content');
+  content.innerHTML = '<div class="card" style="padding:50px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color:var(--primary);margin-bottom:12px"></i><div style="font-weight:600">Memuat...</div></div>';
+  gasApi.withSuccessHandler(function(data){
+    var html = '<h2 style="margin-bottom:20px;font-size:22px;font-weight:800;color:var(--text-main)">'+escapeHTML(jenis.toUpperCase())+'</h2>';
+    if(!data||data.length===0){ html+='<div class="card" style="padding:30px;text-align:center;color:var(--text-muted)">Belum ada data.</div>'; }
+    else {
+      html+='<div class="card" style="padding:20px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr>';
+      Object.keys(data[0]).forEach(function(h){ html+='<th style="padding:12px 14px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700;white-space:nowrap">'+escapeHTML(h)+'</th>'; });
+      html+='</tr></thead><tbody>';
+      data.forEach(function(row){ html+='<tr>'; Object.keys(data[0]).forEach(function(h){ html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9;white-space:nowrap">'+formatTableCellValue(h,row[h])+'</td>'; }); html+='</tr>'; });
+      html+='</tbody></table></div>';
+    }
+    content.innerHTML = html;
+  }).withFailureHandler(errorHandler).getDataMenu(jenis);
+}
 
-        const headers = Object.keys(data[0]);
+function menuProyek(){
+  var content = document.querySelector('.content');
+  content.innerHTML = '<div class="card" style="padding:50px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color:var(--primary);margin-bottom:12px"></i></div>';
+  gasApi.withSuccessHandler(function(data){
+    var html = '<h2 style="margin-bottom:20px;font-size:22px;font-weight:800;color:var(--text-main)"><i class="fa-solid fa-water-ladder" style="color:var(--primary);margin-right:8px"></i>Data Proyek Irigasi</h2>';
+    if(!data||data.length===0){ html+='<div class="card" style="padding:30px;text-align:center;color:var(--text-muted)">Belum ada proyek.</div>'; }
+    else {
+      html+='<div class="card" style="padding:20px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr>';
+      ['ID','Nama Proyek','Kecamatan','Jenis','Kontraktor','Nilai','Progres','Status'].forEach(function(h){ html+='<th style="padding:12px 14px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700;white-space:nowrap">'+h+'</th>'; });
+      html+='</tr></thead><tbody>';
+      data.forEach(function(p){
+        html+='<tr>';
+        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">'+escapeHTML(p.ID)+'</td>';
+        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9;font-weight:600">'+escapeHTML(p['Nama Proyek'])+'</td>';
+        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">'+escapeHTML(p.Kecamatan)+'</td>';
+        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">'+escapeHTML(p.Jenis||'')+'</td>';
+        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">'+escapeHTML(p.Kontraktor||'')+'</td>';
+        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">Rp '+Number(p['Nilai Kontrak']||0).toLocaleString('id-ID')+'</td>';
+        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9"><strong>'+Number(p.Progres||0)+'%</strong></td>';
+        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">'+escapeHTML(p.Status||'')+'</td>';
+        html+='</tr>';
+      });
+      html+='</tbody></table></div>';
+    }
+    content.innerHTML = html;
+  }).withFailureHandler(errorHandler).getDataMenu('proyek');
+}
 
-        html += '<thead><tr>';
-        headers.forEach(h => {
-          html +=
-            '<th style="padding:12px 14px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700;color:var(--text-main);white-space:nowrap">'
-            + escapeHTML(h) +
-            '</th>';
-        });
-        html += '</tr></thead><tbody>';
+/* =========================
+   LAPORAN HARIAN FORM
+========================= */
+function menuLaporan(){
+  var content = document.querySelector('.content');
+  content.innerHTML = '<div class="card" style="padding:50px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color:var(--primary);margin-bottom:12px"></i></div>';
+  loadProyekOptions(function(proyekOpts){
+    var today = new Date().toISOString().slice(0,10);
+    content.innerHTML =
+      '<h2 style="margin-bottom:4px;font-size:24px;font-weight:800;color:var(--text-main)"><i class="fa-solid fa-file-signature" style="color:var(--primary);margin-right:8px"></i>Laporan Harian</h2>'+
+      '<p style="color:var(--text-muted);margin-bottom:20px;font-size:14px">Input realisasi pekerjaan dan perhitungan volume otomatis</p>'+
+      '<div class="card" style="padding:24px;margin-bottom:24px">'+
+      '<form id="formLaporan" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Proyek *</label>'+
+      '<select id="lapProyek" required style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+proyekOpts+'</select></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Tanggal</label>'+
+      '<input type="date" id="lapTanggal" value="'+today+'" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Cuaca</label>'+
+      '<select id="lapCuaca" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+
+      '<option>Cerah</option><option>Mendung</option><option>Hujan</option><option>Hujan Ringan</option><option>Hujan Lebat</option></select></div>'+
+      '<div style="grid-column:1/4"><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Uraian Pekerjaan *</label>'+
+      '<input type="text" id="lapUraian" placeholder="Contoh: Pasangan batu saluran primer" required style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Satuan</label>'+
+      '<select id="lapSatuan" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+
+      '<option value="m3">m³</option><option value="m2">m²</option><option value="m1">m¹</option><option value="unit">Unit</option><option value="kg">Kg</option><option value="lot">Lot</option></select></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Panjang (m)</label>'+
+      '<input type="number" id="lapPanjang" step="0.01" placeholder="0" oninput="hitungVolume()" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Lebar (m)</label>'+
+      '<input type="number" id="lapLebar" step="0.01" placeholder="0" oninput="hitungVolume()" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Tinggi / Tebal (m)</label>'+
+      '<input type="number" id="lapTinggi" step="0.01" placeholder="0" oninput="hitungVolume()" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Jumlah Unit</label>'+
+      '<input type="number" id="lapUnit" step="1" placeholder="0" oninput="hitungVolume()" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Berat (Kg)</label>'+
+      '<input type="number" id="lapBerat" step="0.01" placeholder="0" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Volume Terhitung</label>'+
+      '<input type="text" id="lapVolume" readonly style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px;background:#f8fafc;font-weight:700;color:var(--primary)"></div>'+
+      '<div style="grid-column:1/4"><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Keterangan</label>'+
+      '<textarea id="lapKeterangan" rows="3" placeholder="Keterangan pekerjaan" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px;resize:vertical"></textarea></div>'+
+      '</form>'+
+      '<div style="grid-column:1/4;text-align:right;margin-top:8px">'+
+      '<button onclick="simpanLaporan()" style="padding:12px 28px;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(2,132,199,0.3)"><i class="fa-solid fa-floppy-disk"></i> + Simpan Laporan Harian</button></div>'+
+      '</div>'+
+      '<div class="card" style="padding:20px;overflow:auto" id="tabelLaporan">'+
+      '<div style="text-align:center;color:var(--text-muted);padding:20px">Memuat data laporan...</div></div>';
+    loadTabelLaporan();
+  });
+}
 
-        data.forEach(row => {
-          html += '<tr>';
-          headers.forEach(h => {
-            html +=
-              '<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9;color:var(--text-main);white-space:nowrap">'
-              + formatTableCellValue(h, row[h])
-              + '</td>';
-          });
-          html += '</tr>';
-        });
+function hitungVolume(){
+  var p = parseFloat(document.getElementById('lapPanjang').value)||0;
+  var l = parseFloat(document.getElementById('lapLebar').value)||0;
+  var t = parseFloat(document.getElementById('lapTinggi').value)||0;
+  var u = parseFloat(document.getElementById('lapUnit').value)||0;
+  var satuan = document.getElementById('lapSatuan').value;
+  var v = 0;
+  if(satuan==='unit'||satuan==='kg') v = u;
+  else v = p * l * t * (u||1);
+  document.getElementById('lapVolume').value = v > 0 ? v.toFixed(2) : '';
+}
 
-        html += '</tbody></table></div>';
-      }
+function simpanLaporan(){
+  var proyek = document.getElementById('lapProyek').value;
+  if(!proyek){ alert('Pilih proyek terlebih dahulu'); return; }
+  var data = {
+    tanggal: document.getElementById('lapTanggal').value,
+    proyek: proyek,
+    cuaca: document.getElementById('lapCuaca').value,
+    uraian: document.getElementById('lapUraian').value,
+    progres: document.getElementById('lapVolume').value || 0,
+    kendala: document.getElementById('lapKeterangan').value,
+    tindakLanjut: ''
+  };
+  if(!data.uraian){ alert('Uraian pekerjaan wajib diisi'); return; }
+  gasApi.withSuccessHandler(function(r){
+    alert(r.message || 'Laporan berhasil disimpan');
+    loadTabelLaporan();
+    document.getElementById('formLaporan').reset();
+    document.getElementById('lapTanggal').value = new Date().toISOString().slice(0,10);
+    document.getElementById('lapVolume').value = '';
+  }).withFailureHandler(errorHandler).tambahLaporan({data:data});
+}
 
-      content.innerHTML = html;
-    })
-    .withFailureHandler(errorHandler)
-    .getDataMenu(jenis);
+function loadTabelLaporan(){
+  gasApi.withSuccessHandler(function(data){
+    var el = document.getElementById('tabelLaporan');
+    if(!data||data.length===0){ el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px">Belum ada laporan.</div>'; return; }
+    var rows = data.slice(-20).reverse();
+    var html='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700;width:40px">No</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Tanggal</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Proyek</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Pekerjaan</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Volume</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">User</th>'+
+      '</tr></thead><tbody>';
+    rows.forEach(function(r,i){
+      html+='<tr><td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+(i+1)+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Tanggal||r.tanggal||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Proyek||r.proyek||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Uraian||r.uraian||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Volume||r.progres||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.User||r.user||''))+'</td></tr>';
+    });
+    html+='</tbody></table>';
+    el.innerHTML = html;
+  }).withFailureHandler(errorHandler).getDataMenu('laporan');
+}
+
+/* =========================
+   DOKUMENTASI FORM
+========================= */
+function menuDokumentasi(){
+  var content = document.querySelector('.content');
+  content.innerHTML = '<div class="card" style="padding:50px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color:var(--primary);margin-bottom:12px"></i></div>';
+  loadProyekOptions(function(proyekOpts){
+    var today = new Date().toISOString().slice(0,10);
+    content.innerHTML =
+      '<h2 style="margin-bottom:4px;font-size:24px;font-weight:800;color:var(--text-main)"><i class="fa-solid fa-camera-retro" style="color:var(--primary);margin-right:8px"></i>Dokumentasi Lapangan</h2>'+
+      '<p style="color:var(--text-muted);margin-bottom:20px;font-size:14px">Upload foto langsung dari kamera HP beserta lokasi dan keterangan</p>'+
+      '<div class="card" style="padding:24px;margin-bottom:24px">'+
+      '<form id="formDokumentasi" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Proyek *</label>'+
+      '<select id="docProyek" required style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+proyekOpts+'</select></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Tanggal</label>'+
+      '<input type="date" id="docTanggal" value="'+today+'" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Kecamatan</label>'+
+      '<select id="docKecamatan" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+
+      '<option>Kota Waikabubak</option><option>Lamboya</option><option>Loli</option><option>Mamoli</option><option>Wailokang</option><option>Wanokaka</option></select></div>'+
+      '<div style="grid-column:1/4"><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Lokasi Kerja *</label>'+
+      '<input type="text" id="docLokasi" placeholder="Contoh: Saluran primer Desa ..." required style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div style="grid-column:1/4"><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Keterangan Foto</label>'+
+      '<textarea id="docKeterangan" rows="3" placeholder="Jelaskan kegiatan yang terlihat pada foto" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px;resize:vertical"></textarea></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Latitude</label>'+
+      '<input type="text" id="docLat" placeholder="-9.530" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Longitude</label>'+
+      '<input type="text" id="docLng" placeholder="119.420" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div style="border:2px dashed var(--border-color);border-radius:12px;padding:24px;text-align:center;grid-column:1/4;background:#fafbfc">'+
+      '<i class="fa-solid fa-cloud-arrow-up" style="font-size:32px;color:var(--primary);margin-bottom:8px;display:block"></i>'+
+      '<div style="font-weight:700;font-size:14px;margin-bottom:4px">Upload Foto Lapangan</div>'+
+      '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Gunakan kamera HP untuk dokumentasi real-time.</div>'+
+      '<input type="file" id="docFoto" accept="image/*" capture="environment" style="font-size:13px"></div>'+
+      '</form>'+
+      '<div style="grid-column:1/4;display:flex;justify-content:flex-end;gap:10px;margin-top:8px">'+
+      '<button onclick="ambilGPS('docLat','docLng')" style="padding:10px 20px;background:var(--bg-app);color:var(--primary);border:1px solid var(--primary);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer"><i class="fa-solid fa-location-dot"></i> Ambil Lokasi GPS</button>'+
+      '<button onclick="simpanDokumentasi()" style="padding:12px 28px;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(2,132,199,0.3)"><i class="fa-solid fa-floppy-disk"></i> Simpan Dokumentasi</button></div>'+
+      '</div>'+
+      '<div class="card" style="padding:20px;overflow:auto" id="tabelDokumentasi">'+
+      '<div style="text-align:center;color:var(--text-muted);padding:20px">Memuat data dokumentasi...</div></div>';
+    loadTabelDokumentasi();
+  });
+}
+
+function ambilGPS(latId, lngId){
+  if(!navigator.geolocation){ alert('GPS tidak tersedia di browser ini'); return; }
+  navigator.geolocation.getCurrentPosition(function(pos){
+    document.getElementById(latId).value = pos.coords.latitude.toFixed(6);
+    document.getElementById(lngId).value = pos.coords.longitude.toFixed(6);
+  },function(){ alert('Gagal mengambil lokasi GPS'); });
+}
+
+function simpanDokumentasi(){
+  var proyek = document.getElementById('docProyek').value;
+  if(!proyek){ alert('Pilih proyek terlebih dahulu'); return; }
+  var lokasi = document.getElementById('docLokasi').value;
+  if(!lokasi){ alert('Lokasi kerja wajib diisi'); return; }
+  var data = {
+    tanggal: document.getElementById('docTanggal').value,
+    proyek: proyek,
+    kecamatan: document.getElementById('docKecamatan').value,
+    lokasi: lokasi,
+    keterangan: document.getElementById('docKeterangan').value,
+    latitude: document.getElementById('docLat').value,
+    longitude: document.getElementById('docLng').value,
+    foto: ''
+  };
+  gasApi.withSuccessHandler(function(r){
+    alert(r.message || 'Dokumentasi berhasil disimpan');
+    loadTabelDokumentasi();
+    document.getElementById('formDokumentasi').reset();
+    document.getElementById('docTanggal').value = new Date().toISOString().slice(0,10);
+  }).withFailureHandler(errorHandler).tambahDokumentasi({data:data});
+}
+
+function loadTabelDokumentasi(){
+  gasApi.withSuccessHandler(function(data){
+    var el = document.getElementById('tabelDokumentasi');
+    if(!data||data.length===0){ el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px">Belum ada dokumentasi.</div>'; return; }
+    var rows = data.slice(-20).reverse();
+    var html='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700;width:40px">No</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Tanggal</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Proyek</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Lokasi</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Keterangan</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Foto</th>'+
+      '</tr></thead><tbody>';
+    rows.forEach(function(r,i){
+      html+='<tr><td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+(i+1)+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Tanggal||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Proyek||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Lokasi||r.lokasi||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Keterangan||r.keterangan||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Foto||r.foto||'-'))+'</td></tr>';
+    });
+    html+='</tbody></table>';
+    el.innerHTML = html;
+  }).withFailureHandler(errorHandler).getDataMenu('dokumentasi');
+}
+
+/* =========================
+   PROGRES FISIK FORM
+========================= */
+function menuProgress(){
+  var content = document.querySelector('.content');
+  content.innerHTML = '<div class="card" style="padding:50px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color:var(--primary);margin-bottom:12px"></i></div>';
+  loadProyekOptions(function(proyekOpts){
+    var today = new Date().toISOString().slice(0,10);
+    content.innerHTML =
+      '<h2 style="margin-bottom:4px;font-size:24px;font-weight:800;color:var(--text-main)"><i class="fa-solid fa-chart-line" style="color:var(--primary);margin-right:8px"></i>Progress Fisik</h2>'+
+      '<p style="color:var(--text-muted);margin-bottom:20px;font-size:14px">Progress rencana, realisasi dan laporan pendukung</p>'+
+      '<div class="card" style="padding:24px;margin-bottom:24px">'+
+      '<form id="formProgress" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Proyek *</label>'+
+      '<select id="progProyek" required style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+proyekOpts+'</select></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Tanggal</label>'+
+      '<input type="date" id="progTanggal" value="'+today+'" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Progress Sebelumnya (%)</label>'+
+      '<input type="number" id="progSebelum" min="0" max="100" value="0" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Progress Rencana (%)</label>'+
+      '<input type="number" id="progRencana" min="0" max="100" placeholder="0" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Progress Realisasi (%)</label>'+
+      '<input type="number" id="progRealisasi" min="0" max="100" placeholder="0" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Progress Kumulatif (%)</label>'+
+      '<input type="number" id="progKumulatif" min="0" max="100" placeholder="0" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div style="grid-column:1/4"><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Keterangan</label>'+
+      '<textarea id="progKeterangan" rows="3" placeholder="Keterangan progress" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px;resize:vertical"></textarea></div>'+
+      '<div style="grid-column:1/4;border:2px dashed var(--border-color);border-radius:12px;padding:24px;text-align:center;background:#fafbfc">'+
+      '<i class="fa-solid fa-file-arrow-up" style="font-size:32px;color:var(--primary);margin-bottom:8px;display:block"></i>'+
+      '<div style="font-weight:700;font-size:14px;margin-bottom:4px">Upload Laporan Progress</div>'+
+      '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">PDF / Excel dapat disimpan sebagai dokumen pendukung.</div>'+
+      '<input type="file" id="progFile" accept=".pdf,.xlsx,.xls" style="font-size:13px"></div>'+
+      '</form>'+
+      '<div style="grid-column:1/4;text-align:right;margin-top:8px">'+
+      '<button onclick="simpanProgress()" style="padding:12px 28px;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(2,132,199,0.3)"><i class="fa-solid fa-floppy-disk"></i> Simpan Progress</button></div>'+
+      '</div>'+
+      '<div class="card" style="padding:20px;overflow:auto" id="tabelProgress">'+
+      '<div style="text-align:center;color:var(--text-muted);padding:20px">Memuat data progress...</div></div>';
+    loadTabelProgress();
+  });
+}
+
+function simpanProgress(){
+  var proyek = document.getElementById('progProyek').value;
+  if(!proyek){ alert('Pilih proyek terlebih dahulu'); return; }
+  var data = {
+    tanggal: document.getElementById('progTanggal').value,
+    proyek: proyek,
+    rencana: document.getElementById('progRencana').value,
+    realisasi: document.getElementById('progRealisasi').value,
+    kumulatif: document.getElementById('progKumulatif').value,
+    keterangan: document.getElementById('progKeterangan').value
+  };
+  gasApi.withSuccessHandler(function(r){
+    alert(r.message || 'Progress berhasil disimpan');
+    loadTabelProgress();
+    document.getElementById('formProgress').reset();
+    document.getElementById('progTanggal').value = new Date().toISOString().slice(0,10);
+  }).withFailureHandler(errorHandler).tambahProgress({data:data});
+}
+
+function loadTabelProgress(){
+  gasApi.withSuccessHandler(function(data){
+    var el = document.getElementById('tabelProgress');
+    if(!data||data.length===0){ el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px">Belum ada progress.</div>'; return; }
+    var rows = data.slice(-20).reverse();
+    var html='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700;width:40px">No</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Tanggal</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Proyek</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Rencana</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Realisasi</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Kumulatif</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Keterangan</th>'+
+      '</tr></thead><tbody>';
+    rows.forEach(function(r,i){
+      html+='<tr><td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+(i+1)+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Tanggal||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Proyek||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Rencana||r.rencana||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Realisasi||r.realisasi||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Kumulatif||r.kumulatif||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Keterangan||r.keterangan||''))+'</td></tr>';
+    });
+    html+='</tbody></table>';
+    el.innerHTML = html;
+  }).withFailureHandler(errorHandler).getDataMenu('progress');
+}
+
+/* =========================
+   KERUSAKAN JARINGAN FORM
+========================= */
+function menuKerusakan(){
+  var content = document.querySelector('.content');
+  content.innerHTML = '<div class="card" style="padding:50px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color:var(--primary);margin-bottom:12px"></i></div>';
+  loadProyekOptions(function(proyekOpts){
+    var today = new Date().toISOString().slice(0,10);
+    content.innerHTML =
+      '<h2 style="margin-bottom:4px;font-size:24px;font-weight:800;color:var(--text-main)"><i class="fa-solid fa-triangle-exclamation" style="color:var(--warning);margin-right:8px"></i>Kerusakan Jaringan</h2>'+
+      '<p style="color:var(--text-muted);margin-bottom:20px;font-size:14px">Input kerusakan jaringan irigasi dan tindak lanjut</p>'+
+      '<div class="card" style="padding:24px;margin-bottom:24px">'+
+      '<form id="formKerusakan" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Proyek *</label>'+
+      '<select id="krsProyek" required style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+proyekOpts+'</select></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Tanggal</label>'+
+      '<input type="date" id="krsTanggal" value="'+today+'" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Kecamatan</label>'+
+      '<select id="krsKecamatan" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+
+      '<option>Kota Waikabubak</option><option>Lamboya</option><option>Loli</option><option>Mamoli</option><option>Wailokang</option><option>Wanokaka</option></select></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Lokasi</label>'+
+      '<input type="text" id="krsLokasi" placeholder="Lokasi kerusakan" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Jenis Kerusakan</label>'+
+      '<select id="krsJenis" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+
+      '<option>Saluran Rusak</option><option>Tanah Longsor</option><option>Pipa Bocor</option><option>Jembatan Rusak</option><option>Sedimen</option><option>Lainnya</option></select></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Tingkat Kerusakan</label>'+
+      '<select id="krsTingkat" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+
+      '<option>Ringan</option><option>Sedang</option><option>Berat</option></select></div>'+
+      '<div style="grid-column:1/4"><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Uraian Kerusakan</label>'+
+      '<textarea id="krsDeskripsi" rows="3" placeholder="Jelaskan kerusakan yang ditemukan" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px;resize:vertical"></textarea></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Tindakan</label>'+
+      '<input type="text" id="krsTindakan" placeholder="Tindakan yang dilakukan" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Status</label>'+
+      '<select id="krsStatus" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+
+      '<option>BELUM DITINDAKLANJUTI</option><option>Sedang Diproses</option><option>Selesai</option></select></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Latitude</label>'+
+      '<input type="text" id="krsLat" placeholder="-9.530" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Longitude</label>'+
+      '<input type="text" id="krsLng" placeholder="119.420" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div style="grid-column:1/4;border:2px dashed var(--border-color);border-radius:12px;padding:24px;text-align:center;background:#fafbfc">'+
+      '<i class="fa-solid fa-camera" style="font-size:32px;color:var(--warning);margin-bottom:8px;display:block"></i>'+
+      '<div style="font-weight:700;font-size:14px;margin-bottom:4px">Foto Kerusakan</div>'+
+      '<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">Upload foto kondisi kerusakan di lapangan.</div>'+
+      '<input type="file" id="krsFoto" accept="image/*" capture="environment" style="font-size:13px"></div>'+
+      '</form>'+
+      '<div style="grid-column:1/4;display:flex;justify-content:flex-end;gap:10px;margin-top:8px">'+
+      '<button onclick="ambilGPS('krsLat','krsLng')" style="padding:10px 20px;background:var(--bg-app);color:var(--primary);border:1px solid var(--primary);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer"><i class="fa-solid fa-location-dot"></i> GPS</button>'+
+      '<button onclick="simpanKerusakan()" style="padding:12px 28px;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(2,132,199,0.3)"><i class="fa-solid fa-floppy-disk"></i> Simpan Kerusakan</button></div>'+
+      '</div>'+
+      '<div class="card" style="padding:20px;overflow:auto" id="tabelKerusakan">'+
+      '<div style="text-align:center;color:var(--text-muted);padding:20px">Memuat data kerusakan...</div></div>';
+    loadTabelKerusakan();
+  });
+}
+
+function simpanKerusakan(){
+  var proyek = document.getElementById('krsProyek').value;
+  if(!proyek){ alert('Pilih proyek terlebih dahulu'); return; }
+  var data = {
+    tanggal: document.getElementById('krsTanggal').value,
+    proyek: proyek,
+    lokasi: document.getElementById('krsLokasi').value,
+    jenis: document.getElementById('krsJenis').value,
+    deskripsi: document.getElementById('krsDeskripsi').value,
+    tingkat: document.getElementById('krsTingkat').value,
+    tindakLanjut: document.getElementById('krsTindakan').value,
+    latitude: document.getElementById('krsLat').value,
+    longitude: document.getElementById('krsLng').value
+  };
+  gasApi.withSuccessHandler(function(r){
+    alert(r.message || 'Kerusakan berhasil dilaporkan');
+    loadTabelKerusakan();
+    document.getElementById('formKerusakan').reset();
+    document.getElementById('krsTanggal').value = new Date().toISOString().slice(0,10);
+  }).withFailureHandler(errorHandler).tambahKerusakan({data:data});
+}
+
+function loadTabelKerusakan(){
+  gasApi.withSuccessHandler(function(data){
+    var el = document.getElementById('tabelKerusakan');
+    if(!data||data.length===0){ el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px">Belum ada kerusakan.</div>'; return; }
+    var rows = data.slice(-20).reverse();
+    var html='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700;width:40px">No</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Tanggal</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Proyek</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Lokasi</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Jenis</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Tingkat</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Status</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Foto</th>'+
+      '</tr></thead><tbody>';
+    rows.forEach(function(r,i){
+      html+='<tr><td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+(i+1)+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Tanggal||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Proyek||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Lokasi||r.lokasi||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Jenis||r.jenis||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Tingkat||r.tingkat||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Status||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Foto||r.foto||'-'))+'</td></tr>';
+    });
+    html+='</tbody></table>';
+    el.innerHTML = html;
+  }).withFailureHandler(errorHandler).getDataMenu('kerusakan');
+}
+
+/* =========================
+   RAB FORM
+========================= */
+function menuRab(){
+  var content = document.querySelector('.content');
+  content.innerHTML = '<div class="card" style="padding:50px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color:var(--primary);margin-bottom:12px"></i></div>';
+  gasApi.withSuccessHandler(function(data){
+    var html = '<h2 style="margin-bottom:20px;font-size:22px;font-weight:800;color:var(--text-main)"><i class="fa-solid fa-calculator" style="color:var(--primary);margin-right:8px"></i>RAB & Anggaran</h2>';
+    if(!data||data.length===0){ html+='<div class="card" style="padding:30px;text-align:center;color:var(--text-muted)">Belum ada data RAB.</div>'; }
+    else {
+      html+='<div class="card" style="padding:20px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>';
+      Object.keys(data[0]).forEach(function(h){ html+='<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700;white-space:nowrap">'+escapeHTML(h)+'</th>'; });
+      html+='</tr></thead><tbody>';
+      data.forEach(function(row){ html+='<tr>'; Object.keys(data[0]).forEach(function(h){ html+='<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;white-space:nowrap">'+formatTableCellValue(h,row[h])+'</td>'; }); html+='</tr>'; });
+      html+='</tbody></table></div>';
+    }
+    content.innerHTML = html;
+  }).withFailureHandler(errorHandler).getDataMenu('rab');
 }
 
 /* =========================

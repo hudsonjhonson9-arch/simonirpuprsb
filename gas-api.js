@@ -62,5 +62,7 @@ const gasApi = {
   tambahProyek(data) { return this._call('tambahProyek', { data }); },
   tambahLaporan(data) { return this._call('tambahLaporan', { data }); },
   tambahKerusakan(data) { return this._call('tambahKerusakan', { data }); },
+  tambahDokumentasi(data) { return this._call('tambahDokumentasi', { data }); },
+  tambahProgress(data) { return this._call('tambahProgress', { data }); },
   updateProgres(data) { return this._call('updateProgres', { data }); },
 };
