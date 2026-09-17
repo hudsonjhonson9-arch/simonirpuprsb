@@ -1628,29 +1628,127 @@ function menuGeneric(jenis){
 function menuProyek(){
   var content = document.querySelector('.content');
   content.innerHTML = '<div class="card" style="padding:50px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color:var(--primary);margin-bottom:12px"></i></div>';
-  gasApi.withSuccessHandler(function(data){
-    var html = '<h2 style="margin-bottom:20px;font-size:22px;font-weight:800;color:var(--text-main)"><i class="fa-solid fa-water-ladder" style="color:var(--primary);margin-right:8px"></i>Data Proyek Irigasi</h2>';
-    if(!data||data.length===0){ html+='<div class="card" style="padding:30px;text-align:center;color:var(--text-muted)">Belum ada proyek.</div>'; }
-    else {
-      html+='<div class="card" style="padding:20px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:14px"><thead><tr>';
-      ['ID','Nama Proyek','Kecamatan','Jenis','Kontraktor','Nilai','Progres','Status'].forEach(function(h){ html+='<th style="padding:12px 14px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700;white-space:nowrap">'+h+'</th>'; });
-      html+='</tr></thead><tbody>';
-      data.forEach(function(p){
-        html+='<tr>';
-        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">'+escapeHTML(p.ID)+'</td>';
-        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9;font-weight:600">'+escapeHTML(p['Nama Proyek'])+'</td>';
-        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">'+escapeHTML(p.Kecamatan)+'</td>';
-        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">'+escapeHTML(p.Jenis||'')+'</td>';
-        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">'+escapeHTML(p.Kontraktor||'')+'</td>';
-        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">Rp '+Number(p['Nilai Kontrak']||0).toLocaleString('id-ID')+'</td>';
-        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9"><strong>'+Number(p.Progres||0)+'%</strong></td>';
-        html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">'+escapeHTML(p.Status||'')+'</td>';
-        html+='</tr>';
-      });
-      html+='</tbody></table></div>';
-    }
+  loadProyekOptions(function(proyekOpts){
+    var tahun = new Date().getFullYear();
+    var today = new Date().toISOString().slice(0,10);
+    var html =
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">'+
+      '<div><h2 style="font-size:22px;font-weight:800;color:var(--text-main);margin:0"><i class="fa-solid fa-water-ladder" style="color:var(--primary);margin-right:8px"></i>Proyek Irigasi</h2>'+
+      '<p style="color:var(--text-muted);margin:4px 0 0;font-size:14px">Data proyek, kontrak, sumber dana dan lokasi pekerjaan</p></div>'+
+      '<button onclick="document.getElementById(\'formProyekWrap\').style.display=document.getElementById(\'formProyekWrap\').style.display===\'none\'?\'block\':\'none\'" style="padding:10px 20px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(245,158,11,0.3)"><i class="fa-solid fa-plus"></i> Tambah Proyek</button></div>'+
+      '<div id="formProyekWrap" class="card" style="padding:24px;margin-bottom:24px;display:none">'+
+      '<form id="formProyek" style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Nama Proyek *</label>'+
+      '<input type="text" id="prNama" placeholder="Nama pekerjaan/proyek" required style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Nomor Kontrak</label>'+
+      '<input type="text" id="prNoKontrak" placeholder="Nomor kontrak" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Tahun</label>'+
+      '<input type="number" id="prTahun" value="'+tahun+'" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Sumber Dana</label>'+
+      '<select id="prSumberDana" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+
+      '<option>APBD</option><option>APBN</option><option>DAK</option><option>Swadaya</option><option>Lainnya</option></select></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Kecamatan</label>'+
+      '<select id="prKecamatan" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+
+      '<option>Kota Waikabubak</option><option>Lamboya</option><option>Loli</option><option>Mamoli</option><option>Wailokang</option><option>Wanokaka</option></select></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Desa / Kelurahan</label>'+
+      '<input type="text" id="prDesa" placeholder="Desa lokasi proyek" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Lokasi Detail</label>'+
+      '<input type="text" id="prLokasi" placeholder="Lokasi detail" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Jenis Irigasi</label>'+
+      '<select id="prJenis" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+
+      '<option>Irigasi Permukaan</option><option>Irigasi Tanah</option><option>Irigasi Pompa</option><option>Irigasi Hujan</option></select></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Nilai Kontrak (Rp)</label>'+
+      '<input type="number" id="prNilai" placeholder="0" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Penyedia / Kontraktor</label>'+
+      '<input type="text" id="prKontraktor" placeholder="Nama penyedia" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Konsultan</label>'+
+      '<input type="text" id="prKonsultan" placeholder="Nama konsultan" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Tanggal Mulai</label>'+
+      '<input type="date" id="prMulai" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Tanggal Selesai</label>'+
+      '<input type="date" id="prSelesai" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Progress Awal (%)</label>'+
+      '<input type="number" id="prProgres" placeholder="0" value="0" min="0" max="100" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '</form>'+
+      '<div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px">'+
+      '<button onclick="resetFormProyek()" style="padding:10px 20px;background:var(--bg-app);color:var(--text-muted);border:1px solid var(--border-color);border-radius:10px;font-size:14px;font-weight:600;cursor:pointer">Reset</button>'+
+      '<button onclick="simpanProyek()" style="padding:12px 28px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(245,158,11,0.3)"><i class="fa-solid fa-floppy-disk"></i> Simpan Proyek</button></div>'+
+      '</div>'+
+      '<div class="card" style="padding:20px;overflow:auto" id="tabelProyek">'+
+      '<div style="text-align:center;color:var(--text-muted);padding:20px">Memuat data proyek...</div></div>';
     content.innerHTML = html;
+    loadTabelProyek();
+  });
+}
+
+function resetFormProyek(){
+  var f = document.getElementById('formProyek');
+  if(f) f.reset();
+  var tahun = document.getElementById('prTahun');
+  if(tahun) tahun.value = new Date().getFullYear();
+  var progres = document.getElementById('prProgres');
+  if(progres) progres.value = '0';
+}
+
+function loadTabelProyek(){
+  gasApi.withSuccessHandler(function(data){
+    var box = document.getElementById('tabelProyek');
+    if(!box) return;
+    if(!data||data.length===0){ box.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px">Belum ada proyek.</div>'; return; }
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>';
+    ['No','Nama Proyek','No. Kontrak','Kecamatan','Sumber Dana','Nilai Kontrak','Progress','Status','Aksi'].forEach(function(h){
+      html+='<th style="padding:12px 14px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700;white-space:nowrap">'+h+'</th>';
+    });
+    html+='</tr></thead><tbody>';
+    data.forEach(function(p,i){
+      var progress = Number(p.Progres||0);
+      var statusColor = p.Status==='Selesai'?'#22c55e':p.Status==='On Progress'?'#3b82f6':p.Status==='Terlambat'?'#ef4444':'#94a3b8';
+      html+='<tr>';
+      html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">'+(i+1)+'</td>';
+      html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9;font-weight:600">'+escapeHTML(p['Nama Proyek']||'')+'</td>';
+      html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">'+escapeHTML(p['Nomor Kontrak']||'-')+'</td>';
+      html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">'+escapeHTML(p.Kecamatan||'')+'</td>';
+      html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">'+escapeHTML(p['Sumber Dana']||'')+'</td>';
+      html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">Rp '+Number(p['Nilai Kontrak']||0).toLocaleString('id-ID')+'</td>';
+      html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9"><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;min-width:60px"><div style="height:100%;width:'+progress+'%;background:var(--primary);border-radius:3px"></div></div><span style="font-weight:700;font-size:12px">'+progress+'%</span></div></td>';
+      html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9"><span style="padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;background:'+statusColor+'20;color:'+statusColor+'">'+escapeHTML(p.Status||'')+'</span></td>';
+      html+='<td style="padding:12px 14px;border-bottom:1px solid #f1f5f9">-</td>';
+      html+='</tr>';
+    });
+    html+='</tbody></table>';
+    box.innerHTML = html;
   }).withFailureHandler(errorHandler).getDataMenu('proyek');
+}
+
+function simpanProyek(){
+  var nama = document.getElementById('prNama').value.trim();
+  if(!nama){ alert('Nama Proyek wajib diisi!'); return; }
+  var data = {
+    nama: nama,
+    nomorKontrak: document.getElementById('prNoKontrak').value.trim(),
+    tahun: document.getElementById('prTahun').value,
+    sumberDana: document.getElementById('prSumberDana').value,
+    kecamatan: document.getElementById('prKecamatan').value,
+    desa: document.getElementById('prDesa').value.trim(),
+    lokasiDetail: document.getElementById('prLokasi').value.trim(),
+    jenis: document.getElementById('prJenis').value,
+    nilaiKontrak: parseFloat(document.getElementById('prNilai').value)||0,
+    kontraktor: document.getElementById('prKontraktor').value.trim(),
+    konsultan: document.getElementById('prKonsultan').value.trim(),
+    tanggalMulai: document.getElementById('prMulai').value,
+    tanggalSelesai: document.getElementById('prSelesai').value,
+    progresAwal: parseFloat(document.getElementById('prProgres').value)||0
+  };
+  gasApi.withSuccessHandler(function(res){
+    if(res.success){
+      alert('Proyek berhasil ditambahkan!');
+      resetFormProyek();
+      document.getElementById('formProyekWrap').style.display='none';
+      loadTabelProyek();
+    } else {
+      alert('Gagal: '+(res.message||'Terjadi kesalahan'));
+    }
+  }).withFailureHandler(function(e){ alert('Error: '+e.message); }).tambahProyek(data);
 }
 
 /* =========================
