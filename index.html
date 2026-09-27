@@ -1602,7 +1602,7 @@ function loadProyekOptions(callback){
   gasApi.withSuccessHandler(function(data){
     var opts = '<option value="">-- Pilih Proyek --</option>';
     if(data) data.forEach(function(p){
-      opts += '<option value="'+escapeHTML(p.ID)+'">'+escapeHTML(p['Nama Proyek'])+'</option>';
+      opts += '<option value="'+escapeHTML(p['Nama Proyek'])+'">'+escapeHTML(p['Nama Proyek'])+'</option>';
     });
     callback(opts);
   }).getDataMenu('proyek');
@@ -1700,7 +1700,8 @@ function loadTabelProyek(){
       html+='<th style="padding:12px 14px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700;white-space:nowrap">'+h+'</th>';
     });
     html+='</tr></thead><tbody>';
-    data.forEach(function(p,i){
+    // proyek terbaru tampil di urutan paling atas
+    data.slice().reverse().forEach(function(p,i){
       var progress = Number(p.Progres||0);
       var statusColor = p.Status==='Selesai'?'#22c55e':p.Status==='On Progress'?'#3b82f6':p.Status==='Terlambat'?'#ef4444':'#94a3b8';
       html+='<tr>';
@@ -1771,6 +1772,11 @@ function menuLaporan(){
       '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Cuaca</label>'+
       '<select id="lapCuaca" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+
       '<option>Cerah</option><option>Mendung</option><option>Hujan</option><option>Hujan Ringan</option><option>Hujan Lebat</option></select></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Kecamatan</label>'+
+      '<select id="lapKecamatan" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px">'+
+      '<option>Kota Waikabubak</option><option>Lamboya</option><option>Loli</option><option>Mamoli</option><option>Wailokang</option><option>Wanokaka</option></select></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Pelaksana</label>'+
+      '<input type="text" id="lapPelaksana" placeholder="Nama pelaksana" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
       '<div style="grid-column:1/4"><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Uraian Pekerjaan *</label>'+
       '<input type="text" id="lapUraian" placeholder="Contoh: Pasangan batu saluran primer" required style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
       '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Satuan</label>'+
@@ -1788,6 +1794,12 @@ function menuLaporan(){
       '<input type="number" id="lapBerat" step="0.01" placeholder="0" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
       '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Volume Terhitung</label>'+
       '<input type="text" id="lapVolume" readonly style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px;background:#f8fafc;font-weight:700;color:var(--primary)"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Latitude</label>'+
+      '<input type="text" id="lapLat" placeholder="-9.000000" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Longitude</label>'+
+      '<input type="text" id="lapLng" placeholder="119.000000" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
+      '<div style="display:flex;align-items:flex-end">'+
+      '<button type="button" onclick="ambilGPS(\'lapLat\',\'lapLng\')" style="width:100%;padding:11px 14px;background:#ecfdf5;color:#047857;border:1px dashed #34d399;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer"><i class="fa-solid fa-location-crosshairs"></i> Ambil GPS</button></div>'+
       '<div style="grid-column:1/4"><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Keterangan</label>'+
       '<textarea id="lapKeterangan" rows="3" placeholder="Keterangan pekerjaan" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px;resize:vertical"></textarea></div>'+
       '</form>'+
@@ -1797,6 +1809,8 @@ function menuLaporan(){
       '<div class="card" style="padding:20px;overflow:auto" id="tabelLaporan">'+
       '<div style="text-align:center;color:var(--text-muted);padding:20px">Memuat data laporan...</div></div>';
     loadTabelLaporan();
+    var pel = document.getElementById('lapPelaksana');
+    if(pel && !pel.value && typeof currentUser!=='undefined' && currentUser) pel.value = currentUser.nama || '';
   });
 }
 
@@ -1818,11 +1832,15 @@ function simpanLaporan(){
   var data = {
     tanggal: document.getElementById('lapTanggal').value,
     proyek: proyek,
+    kecamatan: document.getElementById('lapKecamatan').value,
+    pelaksana: document.getElementById('lapPelaksana').value,
     cuaca: document.getElementById('lapCuaca').value,
     uraian: document.getElementById('lapUraian').value,
     progres: document.getElementById('lapVolume').value || 0,
     kendala: document.getElementById('lapKeterangan').value,
-    tindakLanjut: ''
+    tindakLanjut: '',
+    latitude: document.getElementById('lapLat').value,
+    longitude: document.getElementById('lapLng').value
   };
   if(!data.uraian){ alert('Uraian pekerjaan wajib diisi'); return; }
   gasApi.withSuccessHandler(function(r){
@@ -1831,7 +1849,7 @@ function simpanLaporan(){
     document.getElementById('formLaporan').reset();
     document.getElementById('lapTanggal').value = new Date().toISOString().slice(0,10);
     document.getElementById('lapVolume').value = '';
-  }).withFailureHandler(errorHandler).tambahLaporan({data:data});
+  }).withFailureHandler(errorHandler).tambahLaporan(data);
 }
 
 function loadTabelLaporan(){
@@ -1845,15 +1863,18 @@ function loadTabelLaporan(){
       '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Proyek</th>'+
       '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Pekerjaan</th>'+
       '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Volume</th>'+
-      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">User</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Pelaksana</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">GPS</th>'+
       '</tr></thead><tbody>';
     rows.forEach(function(r,i){
+      var gps = (r.Latitude && r.Longitude) ? r.Latitude+', '+r.Longitude : '-';
       html+='<tr><td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+(i+1)+'</td>'+
         '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Tanggal||r.tanggal||''))+'</td>'+
         '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Proyek||r.proyek||''))+'</td>'+
         '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Uraian||r.uraian||''))+'</td>'+
-        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Volume||r.progres||''))+'</td>'+
-        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.User||r.user||''))+'</td></tr>';
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r['Progres Harian']||r.Volume||r.progres||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Pelaksana||r.User||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(gps)+'</td></tr>';
     });
     html+='</tbody></table>';
     el.innerHTML = html;
@@ -1909,7 +1930,31 @@ function ambilGPS(latId, lngId){
   navigator.geolocation.getCurrentPosition(function(pos){
     document.getElementById(latId).value = pos.coords.latitude.toFixed(6);
     document.getElementById(lngId).value = pos.coords.longitude.toFixed(6);
-  },function(){ alert('Gagal mengambil lokasi GPS'); });
+  },function(err){
+    var pesan = ({1:'Izin lokasi ditolak oleh browser',2:'Lokasi tidak tersedia',3:'Waktu tunggu habis'})[err.code] || err.message || 'tidak diketahui';
+    alert('Gagal mengambil lokasi GPS: '+pesan+'. Izinkan akses lokasi lalu coba lagi, atau isi kolom Latitude/Longitude manual.');
+  },{enableHighAccuracy:true, timeout:10000, maximumAge:0});
+}
+
+function kompresFoto(file){
+  return new Promise(function(resolve, reject){
+    var img = new Image();
+    var url = URL.createObjectURL(file);
+    img.onload = function(){
+      var max = 1280, w = img.width, h = img.height;
+      if(w > max || h > max){
+        if(w >= h){ h = Math.round(h * max / w); w = max; }
+        else { w = Math.round(w * max / h); h = max; }
+      }
+      var c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      c.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(c.toDataURL('image/jpeg', 0.8).split(',')[1]);
+    };
+    img.onerror = function(){ URL.revokeObjectURL(url); reject(new Error('Foto gagal dibaca')); };
+    img.src = url;
+  });
 }
 
 function simpanDokumentasi(){
@@ -1927,12 +1972,30 @@ function simpanDokumentasi(){
     longitude: document.getElementById('docLng').value,
     foto: ''
   };
-  gasApi.withSuccessHandler(function(r){
-    alert(r.message || 'Dokumentasi berhasil disimpan');
-    loadTabelDokumentasi();
-    document.getElementById('formDokumentasi').reset();
-    document.getElementById('docTanggal').value = new Date().toISOString().slice(0,10);
-  }).withFailureHandler(errorHandler).tambahDokumentasi({data:data});
+  if(!data.latitude || !data.longitude){
+    if(!confirm('GPS belum terisi. Simpan dokumentasi tanpa lokasi?')) return;
+  }
+
+  var simpan = function(){
+    gasApi.withSuccessHandler(function(r){
+      alert(r.message || 'Dokumentasi berhasil disimpan');
+      loadTabelDokumentasi();
+      document.getElementById('formDokumentasi').reset();
+      document.getElementById('docTanggal').value = new Date().toISOString().slice(0,10);
+    }).withFailureHandler(errorHandler).tambahDokumentasi(data);
+  };
+
+  var fileInput = document.getElementById('docFoto');
+  var file = fileInput && fileInput.files[0];
+  if(!file){ simpan(); return; }
+  if(file.size > 5*1024*1024){ alert('Ukuran foto maksimal 5 MB'); return; }
+
+  kompresFoto(file).then(function(b64){
+    data.fotoBase64 = b64;
+    data.fotoNama = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+    data.fotoTipe = 'image/jpeg';
+    simpan();
+  }).catch(function(e){ alert(e.message); });
 }
 
 function loadTabelDokumentasi(){
@@ -1946,15 +2009,24 @@ function loadTabelDokumentasi(){
       '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Proyek</th>'+
       '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Lokasi</th>'+
       '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Keterangan</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">GPS</th>'+
       '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Foto</th>'+
       '</tr></thead><tbody>';
     rows.forEach(function(r,i){
+      var foto = String(r.Foto || r.foto || '');
+      var selFoto = foto
+        ? (foto.indexOf('http') === 0
+            ? '<a href="'+escapeHTML(foto)+'" target="_blank" rel="noopener" style="color:var(--primary);font-weight:700">Lihat Foto</a>'
+            : escapeHTML(foto))
+        : '-';
+      var gps = (r.Latitude && r.Longitude) ? r.Latitude+', '+r.Longitude : '-';
       html+='<tr><td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+(i+1)+'</td>'+
         '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Tanggal||''))+'</td>'+
         '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Proyek||''))+'</td>'+
         '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Lokasi||r.lokasi||''))+'</td>'+
         '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Keterangan||r.keterangan||''))+'</td>'+
-        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Foto||r.foto||'-'))+'</td></tr>';
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(gps)+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+selFoto+'</td></tr>';
     });
     html+='</tbody></table>';
     el.innerHTML = html;
@@ -2019,7 +2091,7 @@ function simpanProgress(){
     loadTabelProgress();
     document.getElementById('formProgress').reset();
     document.getElementById('progTanggal').value = new Date().toISOString().slice(0,10);
-  }).withFailureHandler(errorHandler).tambahProgress({data:data});
+  }).withFailureHandler(errorHandler).tambahProgress(data);
 }
 
 function loadTabelProgress(){
@@ -2124,7 +2196,7 @@ function simpanKerusakan(){
     loadTabelKerusakan();
     document.getElementById('formKerusakan').reset();
     document.getElementById('krsTanggal').value = new Date().toISOString().slice(0,10);
-  }).withFailureHandler(errorHandler).tambahKerusakan({data:data});
+  }).withFailureHandler(errorHandler).tambahKerusakan(data);
 }
 
 function loadTabelKerusakan(){
@@ -2163,18 +2235,141 @@ function loadTabelKerusakan(){
 function menuRab(){
   var content = document.querySelector('.content');
   content.innerHTML = '<div class="card" style="padding:50px;text-align:center;color:var(--text-muted)"><i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color:var(--primary);margin-bottom:12px"></i></div>';
-  gasApi.withSuccessHandler(function(data){
-    var html = '<h2 style="margin-bottom:20px;font-size:22px;font-weight:800;color:var(--text-main)"><i class="fa-solid fa-calculator" style="color:var(--primary);margin-right:8px"></i>RAB & Anggaran</h2>';
-    if(!data||data.length===0){ html+='<div class="card" style="padding:30px;text-align:center;color:var(--text-muted)">Belum ada data RAB.</div>'; }
-    else {
-      html+='<div class="card" style="padding:20px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>';
-      Object.keys(data[0]).forEach(function(h){ html+='<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700;white-space:nowrap">'+escapeHTML(h)+'</th>'; });
-      html+='</tr></thead><tbody>';
-      data.forEach(function(row){ html+='<tr>'; Object.keys(data[0]).forEach(function(h){ html+='<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;white-space:nowrap">'+formatTableCellValue(h,row[h])+'</td>'; }); html+='</tr>'; });
-      html+='</tbody></table></div>';
-    }
-    content.innerHTML = html;
-  }).withFailureHandler(errorHandler).getDataMenu('rab');
+  gasApi.withSuccessHandler(function(rab){
+    gasApi.withSuccessHandler(function(files){
+      loadProyekOptions(function(proyekOpts){
+        renderRab(rab || [], files || [], proyekOpts);
+      });
+    }).getDataMenu('rabFile');
+  }).getDataMenu('rab');
+}
+
+function renderRab(data, files, proyekOpts){
+  var content = document.querySelector('.content');
+  var inputStyle = 'width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px';
+  var labelStyle = 'display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px';
+
+  var html =
+    '<h2 style="margin-bottom:4px;font-size:24px;font-weight:800;color:var(--text-main)"><i class="fa-solid fa-calculator" style="color:var(--primary);margin-right:8px"></i>RAB &amp; Anggaran</h2>'+
+    '<p style="color:var(--text-muted);margin-bottom:20px;font-size:14px">Unggah dokumen RAB dan isi rincian item pekerjaan</p>'+
+
+    // ---- upload dokumen RAB ----
+    '<div class="card" style="padding:24px;margin-bottom:20px">'+
+    '<h3 style="margin:0 0 14px;font-size:16px;font-weight:800"><i class="fa-solid fa-file-arrow-up" style="color:var(--primary);margin-right:6px"></i>Upload Dokumen RAB (PDF/Excel, maks 10 MB)</h3>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr auto;gap:16px;align-items:end">'+
+    '<div><label style="'+labelStyle+'">Proyek *</label>'+
+    '<select id="rabFileProyek" style="'+inputStyle+'">'+proyekOpts+'</select></div>'+
+    '<div><label style="'+labelStyle+'">File</label>'+
+    '<input type="file" id="rabFileInput" accept=".pdf,.xls,.xlsx,.csv,.doc,.docx" style="width:100%;padding:9px 12px;border:1px dashed var(--border-color);border-radius:10px;font-size:13px;background:#f8fafc"></div>'+
+    '<button type="button" onclick="uploadFileRab()" style="padding:12px 22px;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer"><i class="fa-solid fa-upload"></i> Unggah</button>'+
+    '</div>'+
+    (files.length
+      ? '<div style="margin-top:16px;overflow:auto"><table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'+
+        '<th style="padding:9px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Nama File</th>'+
+        '<th style="padding:9px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Proyek</th>'+
+        '<th style="padding:9px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Tanggal</th>'+
+        '</tr></thead><tbody>'+
+        files.map(function(f){
+          return '<tr>'+
+            '<td style="padding:9px 12px;border-bottom:1px solid #f1f5f9"><a href="'+escapeHTML(f.URL||'')+'" target="_blank" rel="noopener" style="color:var(--primary);font-weight:700">'+escapeHTML(f['Nama File']||'')+'</a></td>'+
+            '<td style="padding:9px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(f.Proyek||''))+'</td>'+
+            '<td style="padding:9px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(f.Tanggal||''))+'</td></tr>';
+        }).join('')+
+        '</tbody></table></div>'
+      : '<p style="margin:14px 0 0;font-size:13px;color:var(--text-muted)">Belum ada dokumen RAB yang diunggah.</p>')+
+    '</div>'+
+
+    // ---- form item RAB ----
+    '<div class="card" style="padding:24px;margin-bottom:20px">'+
+    '<h3 style="margin:0 0 14px;font-size:16px;font-weight:800"><i class="fa-solid fa-list-check" style="color:var(--primary);margin-right:6px"></i>Tambah Item RAB</h3>'+
+    '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px">'+
+    '<div><label style="'+labelStyle+'">Proyek *</label><select id="rabProyek" style="'+inputStyle+'">'+proyekOpts+'</select></div>'+
+    '<div><label style="'+labelStyle+'">Kode</label><input type="text" id="rabKode" placeholder="01.1" style="'+inputStyle+'"></div>'+
+    '<div><label style="'+labelStyle+'">Satuan</label>'+
+    '<select id="rabSatuan" style="'+inputStyle+'"><option>m³</option><option>m²</option><option>m</option><option>unit</option><option>kg</option><option>lot</option></select></div>'+
+    '<div style="grid-column:1/4"><label style="'+labelStyle+'">Uraian Pekerjaan *</label><input type="text" id="rabUraian" placeholder="Pekerjaan..." style="'+inputStyle+'"></div>'+
+    '<div><label style="'+labelStyle+'">Volume</label><input type="number" id="rabVolume" step="0.01" placeholder="0" oninput="hitungJumlahRab()" style="'+inputStyle+'"></div>'+
+    '<div><label style="'+labelStyle+'">Harga Satuan (Rp)</label><input type="number" id="rabHarga" step="1" placeholder="0" oninput="hitungJumlahRab()" style="'+inputStyle+'"></div>'+
+    '<div><label style="'+labelStyle+'">Jumlah (Rp)</label><input type="text" id="rabJumlah" readonly style="'+inputStyle+';background:#f8fafc;font-weight:700;color:var(--primary)"></div>'+
+    '</div>'+
+    '<div style="text-align:right;margin-top:8px">'+
+    '<button type="button" onclick="simpanRab()" style="padding:12px 26px;background:linear-gradient(135deg,#0284c7,#2563eb);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer"><i class="fa-solid fa-floppy-disk"></i> Simpan Item RAB</button>'+
+    '</div></div>'+
+
+    // ---- tabel item ----
+    '<div class="card" style="padding:20px;overflow:auto">';
+  if(!data.length){
+    html += '<div style="text-align:center;color:var(--text-muted);padding:20px">Belum ada data RAB.</div>';
+  } else {
+    html += '<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>';
+    Object.keys(data[0]).forEach(function(h){
+      html += '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700;white-space:nowrap">'+escapeHTML(h)+'</th>';
+    });
+    html += '</tr></thead><tbody>';
+    data.forEach(function(row){
+      html += '<tr>';
+      Object.keys(data[0]).forEach(function(h){
+        html += '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9;white-space:nowrap">'+formatTableCellValue(h,row[h])+'</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table>';
+  }
+  html += '</div>';
+
+  content.innerHTML = html;
+}
+
+function hitungJumlahRab(){
+  var v = parseFloat(document.getElementById('rabVolume').value) || 0;
+  var h = parseFloat(document.getElementById('rabHarga').value) || 0;
+  document.getElementById('rabJumlah').value = (v && h) ? (v * h).toLocaleString('id-ID') : '';
+}
+
+function simpanRab(){
+  var proyek = document.getElementById('rabProyek').value;
+  if(!proyek){ alert('Pilih proyek terlebih dahulu'); return; }
+  var uraian = document.getElementById('rabUraian').value;
+  if(!uraian){ alert('Uraian pekerjaan wajib diisi'); return; }
+  var volume = parseFloat(document.getElementById('rabVolume').value) || 0;
+  var harga = parseFloat(document.getElementById('rabHarga').value) || 0;
+  var data = {
+    proyek: proyek,
+    kode: document.getElementById('rabKode').value,
+    uraian: uraian,
+    volume: volume,
+    satuan: document.getElementById('rabSatuan').value,
+    hargaSatuan: harga,
+    jumlah: volume * harga
+  };
+  gasApi.withSuccessHandler(function(r){
+    alert(r.message || 'Item RAB berhasil disimpan');
+    menuRab();
+  }).withFailureHandler(errorHandler).tambahRab(data);
+}
+
+function uploadFileRab(){
+  var proyek = document.getElementById('rabFileProyek').value;
+  if(!proyek){ alert('Pilih proyek terlebih dahulu'); return; }
+  var fileInput = document.getElementById('rabFileInput');
+  var file = fileInput.files[0];
+  if(!file){ alert('Pilih file terlebih dahulu'); return; }
+  if(file.size > 10*1024*1024){ alert('Ukuran file maksimal 10 MB'); return; }
+
+  var reader = new FileReader();
+  reader.onload = function(e){
+    gasApi.withSuccessHandler(function(r){
+      alert(r.message || 'File berhasil diunggah');
+      menuRab();
+    }).withFailureHandler(errorHandler).uploadRabFile({
+      proyek: proyek,
+      namaFile: file.name,
+      mime: file.type || 'application/octet-stream',
+      base64: e.target.result.split(',')[1]
+    });
+  };
+  reader.onerror = function(){ alert('File gagal dibaca'); };
+  reader.readAsDataURL(file);
 }
 
 /* =========================
