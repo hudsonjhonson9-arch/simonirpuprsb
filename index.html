@@ -1855,6 +1855,7 @@ function simpanLaporan(){
 function loadTabelLaporan(){
   gasApi.withSuccessHandler(function(data){
     var el = document.getElementById('tabelLaporan');
+    if(!el) return;
     if(!data||data.length===0){ el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px">Belum ada laporan.</div>'; return; }
     var rows = data.slice(-20).reverse();
     var html='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'+
@@ -2001,6 +2002,7 @@ function simpanDokumentasi(){
 function loadTabelDokumentasi(){
   gasApi.withSuccessHandler(function(data){
     var el = document.getElementById('tabelDokumentasi');
+    if(!el) return;
     if(!data||data.length===0){ el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px">Belum ada dokumentasi.</div>'; return; }
     var rows = data.slice(-20).reverse();
     var html='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'+
@@ -2097,6 +2099,7 @@ function simpanProgress(){
 function loadTabelProgress(){
   gasApi.withSuccessHandler(function(data){
     var el = document.getElementById('tabelProgress');
+    if(!el) return;
     if(!data||data.length===0){ el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px">Belum ada progress.</div>'; return; }
     var rows = data.slice(-20).reverse();
     var html='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'+
@@ -2202,6 +2205,7 @@ function simpanKerusakan(){
 function loadTabelKerusakan(){
   gasApi.withSuccessHandler(function(data){
     var el = document.getElementById('tabelKerusakan');
+    if(!el) return;
     if(!data||data.length===0){ el.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:20px">Belum ada kerusakan.</div>'; return; }
     var rows = data.slice(-20).reverse();
     var html='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'+
