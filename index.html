@@ -2054,11 +2054,11 @@ function menuProgress(){
       '<input type="date" id="progTanggal" value="'+today+'" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
       '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Progress Sebelumnya (%)</label>'+
       '<input type="number" id="progSebelum" min="0" max="100" value="0" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
-      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Progress Rencana (%)</label>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Bobot (%)</label>'+
       '<input type="number" id="progRencana" min="0" max="100" placeholder="0" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
-      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Progress Realisasi (%)</label>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Progres Fisik (%)</label>'+
       '<input type="number" id="progRealisasi" min="0" max="100" placeholder="0" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
-      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Progress Kumulatif (%)</label>'+
+      '<div><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Progres Keuangan (%)</label>'+
       '<input type="number" id="progKumulatif" min="0" max="100" placeholder="0" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px"></div>'+
       '<div style="grid-column:1/4"><label style="display:block;font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:6px">Keterangan</label>'+
       '<textarea id="progKeterangan" rows="3" placeholder="Keterangan progress" style="width:100%;padding:10px 14px;border:1px solid var(--border-color);border-radius:10px;font-size:14px;resize:vertical"></textarea></div>'+
@@ -2106,18 +2106,18 @@ function loadTabelProgress(){
       '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700;width:40px">No</th>'+
       '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Tanggal</th>'+
       '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Proyek</th>'+
-      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Rencana</th>'+
-      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Realisasi</th>'+
-      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Kumulatif</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Bobot</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Progres Fisik</th>'+
+      '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Progres Keuangan</th>'+
       '<th style="padding:10px 12px;text-align:left;border-bottom:2px solid var(--border-color);font-weight:700">Keterangan</th>'+
       '</tr></thead><tbody>';
     rows.forEach(function(r,i){
       html+='<tr><td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+(i+1)+'</td>'+
-        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Tanggal||''))+'</td>'+
-        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Proyek||''))+'</td>'+
-        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Rencana||r.rencana||''))+'</td>'+
-        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Realisasi||r.realisasi||''))+'</td>'+
-        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Kumulatif||r.kumulatif||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(fmtTanggal(r.Tanggal))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Proyek||r.proyek||''))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(fmtPersen(r.Bobot))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(fmtPersen(r['Progres Fisik']))+'</td>'+
+        '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(fmtPersen(r['Progres Keuangan']))+'</td>'+
         '<td style="padding:10px 12px;border-bottom:1px solid #f1f5f9">'+escapeHTML(String(r.Keterangan||r.keterangan||''))+'</td></tr>';
     });
     html+='</tbody></table>';
@@ -3200,6 +3200,18 @@ function escapeHTML(value){
     .replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;')
     .replace(/'/g,'&#039;');
+}
+
+function fmtPersen(v){
+  v = (v === null || v === undefined ? '' : String(v)).trim();
+  return v && v.indexOf('%') < 0 ? v+'%' : v;
+}
+
+function fmtTanggal(v){
+  var d = new Date(v);
+  if (isNaN(d.getTime())) return (v === null || v === undefined ? '' : String(v));
+  var p = function(n){ return (n < 10 ? '0' : '') + n; };
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
 }
 
 /* =========================
